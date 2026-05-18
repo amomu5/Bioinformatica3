@@ -17,7 +17,7 @@ Bioinformatica3/
 
 ## PRÁCTICAS
 
-| Práctica | 
+| Práctica | Trata de | Usa |
 |---|---|---|
 | **1** | Alineamiento múltiple de secuencias proteicas (familia PF00009, factor de elongación Tu) | Clustal Omega, MUSCLE |
 | **3** | Control de calidad, recorte y mapeo de lecturas Illumina al genoma de referencia | FastQC, fastp, BWA, samtools |
