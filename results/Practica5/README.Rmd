@@ -1,0 +1,27 @@
+---
+title: "README"
+output: html_document
+---
+
+library('curl')
+
+
+```{R}
+curl_download('https://www.ebi.ac.uk/ena/portal/api/search?result=assembly&query=tax_tree(6157) AND genome_representation="full"&fields=version,tax_id,scientific_name,last_updated,base_count&limit=0',
+              destfile = 'z1.txt')
+#No funciona
+
+curl_download(
+  URLencode('https://www.ebi.ac.uk/ena/portal/api/search?result=assembly&query=tax_tree(6157) AND genome_representation="full"&fields=version,tax_id,scientific_name,last_updated,base_count&limit=0'),
+  destfile = 'z1.txt')
+  
+  
+portal <- 'https://www.ebi.ac.uk/ena/portal/api/search?'
+result <- 'result=assembly&'
+query  <- 'query=tax_tree(6157) AND genome_representation="full"&'
+fields <- 'fields=version,tax_id,scientific_name,last_updated,base_count&'
+limit  <- 'limit=0'
+URL <- paste0(portal, result, query, fields, limit)
+curl_download(URLencode(URL), destfile = 'z2.txt')
+
+```

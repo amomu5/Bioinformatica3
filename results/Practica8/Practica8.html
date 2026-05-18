@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Practica 8: Principio de BLAST</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Practica8_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Practica8_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="Practica8_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="Practica8_files/libs/quarto-html/popper.min.js"></script>
+<script src="Practica8_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Practica8_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Practica8_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Practica8_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Practica8_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Practica8_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Practica8_files/libs/bootstrap/bootstrap-efbb37e9afcc02144ebbc7afd12a776f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Practica 8: Principio de BLAST</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Última actualización:</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">18 de mayo de 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="preparación" class="level1">
+<h1>Preparación</h1>
+<p>Necesitamos tener instalado el paquete <code>ncbi-blast+</code>, que en Linux y en WSL2 se puede instalar mediante <code>sudo apt install ncbi-blast+</code>. Este método no instalará la versión más reciente, pero será suficiente. También podemos seguir las instrucciones de instalación en:https://www.ncbi.nlm.nih.gov/books/NBK569861/.</p>
+<p>En el ejercicio 3 necesitaremos también los programas <code>datasets</code> y <code>dataformat</code>, que podéis descargar desde este enlace: https://www.ncbi.nlm.nih.gov/datasets/docs/v2/command-line-tools/download-and-install/. (los instalamos ya en la práctica 4)</p>
+<p>Es recomendable guardar los ejecutables en una carpeta del PATH, yo personalmente los guardo en /usr/local/bin/. Además, usaremos el paquete de R Biostrings, que en caso de no tener instalado, podéis instalar con BiocManager (no con install.packages()!):</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>BiocManager<span class="sc">::</span><span class="fu">install</span>(<span class="st">'Biostrings'</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="callout callout-style-default callout-note no-icon callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Nota</span>Aclaración
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Como estamos trabajando con</p>
+</div>
+</div>
+</section>
+<section id="objetivos" class="level1">
+<h1>Objetivos</h1>
+<p>BLAST ejecuta alineamientos locales entre una secuencia “problema” o query, generalmente no muy larga, y un conjunto grande de secuencias (la base de datos) entre las que esperamos encontrar alguna secuencia homóloga a la query. Cada secuencia de la base de datos que pueda alinearse con la query se la llama subject en el alineamiento. Los objetivos de esta práctica son:</p>
+<ol type="1">
+<li>Identificar proteínas ortólogas entre dos especies con BLASTP.</li>
+<li>Realizar un PSI-BLAST contra la base de datos Swissprot.</li>
+<li>Determinar el origen de las lecturas que no pudieron ser mapeadas a su genoma de referencia, usando BLASTN remoto.</li>
+</ol>
+</section>
+<section id="datos" class="level1">
+<h1>Datos</h1>
+<section id="datos-del-primer-ejercicio" class="level2">
+<h2 class="anchored" data-anchor-id="datos-del-primer-ejercicio">Datos del primer ejercicio</h2>
+<p>En el primer ejercicio, usaremos los proteomas de dos especies bacterianas endosimbiontes, con genomas reducidos (para facilitar las búsquedas): <em>Buchnera aphidicola</em> (107806) y <em>Blochmannia ocreatus</em> (251538). Los proteomas se pueden descargar desde uniprot (pones el ID, entras en la Entry ¡NO DESCARGAS!, y descargas el gene count). Los descargamos comprimidos en la carpeta de data.</p>
+<p>Te dan el archivo comprimido, pero hay que descomprimirlo (o lo podemos leer comprimido también, pero es más incómodo). Para descomprimirlo, usamos:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="st">"</span><span class="va">$(p</span><span class="op">=</span><span class="va">$(</span><span class="bu">pwd</span><span class="va">)</span><span class="kw">;</span> <span class="cf">while</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-f</span> <span class="st">"</span><span class="va">$p</span><span class="st">"</span>/<span class="pp">*</span>.Rproj <span class="bu">]</span> <span class="kw">&amp;&amp;</span> <span class="bu">[</span> <span class="st">"</span><span class="va">$p</span><span class="st">"</span> <span class="ot">!=</span> <span class="st">"/"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">do</span> <span class="va">p</span><span class="op">=</span><span class="va">$(</span><span class="fu">dirname</span> <span class="st">"</span><span class="va">$p</span><span class="st">"</span><span class="va">)</span><span class="kw">;</span> <span class="cf">done</span><span class="kw">;</span> <span class="bu">echo</span> <span class="st">"</span><span class="va">$p</span><span class="st">"</span><span class="va">)</span><span class="st">"</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ~/Bioinformatica/data/Practica8/buchnera.fa <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">gunzip</span> <span class="at">-c</span> ~/Bioinformatica/data/Practica8/UP000001806_107806.fasta.gz <span class="op">&gt;</span> ~/Bioinformatica/data/Practica8/buchnera.fa</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> ~/Bioinformatica/data/Practica8/blochmannia.fa <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">gunzip</span> <span class="at">-c</span> ~/Bioinformatica/data/Practica8/UP001056834_251538.fasta.gz <span class="op">&gt;</span> ~/Bioinformatica/data/Practica8/blochmannia.fa</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="datos-del-segundo-ejercicio" class="level2">
+<h2 class="anchored" data-anchor-id="datos-del-segundo-ejercicio">Datos del segundo ejercicio</h2>
+<p>Para el segundo ejercicio, necesitamos descargar la base de datos de Swissprot para BLAST. Podemos hacerlo de dos maneras. En cualquier caso, los archivos descargados y descomprimidos deben guardarse en la carpeta <code>data</code>. Por tanto, los comandos siguientes deberan de ejecutarse desde esa carpeta. Lo hacemos siguiendo el siguiente comando:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="st">"</span><span class="va">$(p</span><span class="op">=</span><span class="va">$(</span><span class="bu">pwd</span><span class="va">)</span><span class="kw">;</span> <span class="cf">while</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-f</span> <span class="st">"</span><span class="va">$p</span><span class="st">"</span>/<span class="pp">*</span>.Rproj <span class="bu">]</span> <span class="kw">&amp;&amp;</span> <span class="bu">[</span> <span class="st">"</span><span class="va">$p</span><span class="st">"</span> <span class="ot">!=</span> <span class="st">"/"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">do</span> <span class="va">p</span><span class="op">=</span><span class="va">$(</span><span class="fu">dirname</span> <span class="st">"</span><span class="va">$p</span><span class="st">"</span><span class="va">)</span><span class="kw">;</span> <span class="cf">done</span><span class="kw">;</span> <span class="bu">echo</span> <span class="st">"</span><span class="va">$p</span><span class="st">"</span><span class="va">)</span><span class="st">"</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> /mnt/c/Documents/Bioinformatica/data/Practica8/swissprot.tar.gz <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">(</span><span class="bu">cd</span> /mnt/c/Documents/Bioinformatica/data/Practica8 <span class="kw">&amp;&amp;</span> <span class="ex">update_blastdb</span> <span class="at">--decompress</span> swissprot<span class="kw">)</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="datos-del-tercer-ejercicio" class="level2">
+<h2 class="anchored" data-anchor-id="datos-del-tercer-ejercicio">Datos del tercer ejercicio</h2>
+<p>Pinchando aquí (https://aulavirtual.uv.es/pluginfile.php/5994243/mod_resource/content/3/contaminacion.fa.gz) podéis descargar el archivo comprimido contaminacion.fa.gz. No lo abráis ni lo descomprimáis. Sólo guardadlo en la carpeta de datos tal como está. En adelante supondré que podéis acceder al archivo mediante <code>./data/Practica_08</code> desde la carpeta general.</p>
+</section>
+</section>
+<section id="ejercicio-1-ortólogos-recíprocos-buchnera-vs-blochmannia" class="level1">
+<h1>Ejercicio 1 — Ortólogos recíprocos <em>Buchnera</em> vs <em>Blochmannia</em></h1>
+<section id="enmascarar-e-indexar-el-proteoma-de-buchnera" class="level2">
+<h2 class="anchored" data-anchor-id="enmascarar-e-indexar-el-proteoma-de-buchnera">1.1 Enmascarar e indexar el proteoma de <em>Buchnera</em></h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> +e</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="va">DATA</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/data/Practica8</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="va">RES</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/results/Practica8</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/buchnera.phr"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Creamos un archivo para enmascarar zonas de baja complejidad:</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>   <span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/buchnera_seg.asnb"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>      <span class="ex">segmasker</span> <span class="at">-in</span> <span class="st">"</span><span class="va">$DATA</span><span class="st">/buchnera.fasta"</span> <span class="dt">\</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                <span class="at">-infmt</span> fasta <span class="dt">\</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>                <span class="at">-parse_seqids</span> <span class="dt">\</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>                <span class="at">-outfmt</span> maskinfo_asn1_bin <span class="dt">\</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>                <span class="at">-out</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/buchnera_seg.asnb"</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>   <span class="cf">fi</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Y indexamos el archivo FASTA para BLAST:</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>   <span class="ex">makeblastdb</span>  <span class="at">-in</span> <span class="st">"</span><span class="va">$DATA</span><span class="st">/buchnera.fasta"</span> <span class="dt">\</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>                <span class="at">-input_type</span> fasta <span class="dt">\</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>                <span class="at">-dbtype</span> prot <span class="dt">\</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>                <span class="at">-parse_seqids</span> <span class="dt">\</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>                <span class="at">-mask_data</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/buchnera_seg.asnb"</span> <span class="dt">\</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>                <span class="at">-out</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/buchnera"</span> <span class="dt">\</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>                <span class="at">-title</span> <span class="st">"Proteoma de Buchnera"</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="fu">true</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="enmascarar-e-indexar-el-proteoma-de-blochmannia" class="level2">
+<h2 class="anchored" data-anchor-id="enmascarar-e-indexar-el-proteoma-de-blochmannia">1.2 Enmascarar e indexar el proteoma de <em>Blochmannia</em></h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> +e</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="va">DATA</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/data/Practica8</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="va">RES</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/results/Practica8</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/blochmannia.phr"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>   <span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/blochmannia_seg.asnb"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>      <span class="ex">segmasker</span> <span class="at">-in</span> <span class="st">"</span><span class="va">$DATA</span><span class="st">/blochmannia.fasta"</span> <span class="dt">\</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                <span class="at">-infmt</span> fasta <span class="dt">\</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                <span class="at">-parse_seqids</span> <span class="dt">\</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                <span class="at">-outfmt</span> maskinfo_asn1_bin <span class="dt">\</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>                <span class="at">-out</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/blochmannia_seg.asnb"</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>   <span class="cf">fi</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>   <span class="ex">makeblastdb</span>  <span class="at">-in</span> <span class="st">"</span><span class="va">$DATA</span><span class="st">/blochmannia.fasta"</span> <span class="dt">\</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>                <span class="at">-input_type</span> fasta <span class="dt">\</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>                <span class="at">-dbtype</span> prot <span class="dt">\</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>                <span class="at">-parse_seqids</span> <span class="dt">\</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>                <span class="at">-mask_data</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/blochmannia_seg.asnb"</span> <span class="dt">\</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>                <span class="at">-out</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/blochmannia"</span> <span class="dt">\</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>                <span class="at">-title</span> <span class="st">"Proteoma de Blochmannia"</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="blastp-de-buchnera-aphidicola-hacia-blochmannia-ocreatus" class="level2">
+<h2 class="anchored" data-anchor-id="blastp-de-buchnera-aphidicola-hacia-blochmannia-ocreatus">1.3 BLASTP de <em>Buchnera aphidicola</em> hacia <em>Blochmannia ocreatus</em></h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> +e</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="va">DATA</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/data/Practica8</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="va">RES</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/results/Practica8</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/buc2blo.txt"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>   <span class="ex">blastp</span> <span class="at">-query</span> <span class="st">"</span><span class="va">$DATA</span><span class="st">/buchnera.fasta"</span> <span class="dt">\</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>          <span class="at">-db</span>    <span class="st">"</span><span class="va">$RES</span><span class="st">/blochmannia"</span> <span class="dt">\</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>          <span class="at">-out</span>   <span class="st">"</span><span class="va">$RES</span><span class="st">/buc2blo.txt"</span> <span class="dt">\</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>          <span class="at">-outfmt</span> <span class="st">'6 qseqid sseqid qlen slen length evalue bitscore'</span> <span class="dt">\</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">-evalue</span> 0.001 <span class="dt">\</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>          <span class="at">-max_target_seqs</span> 1</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Hits buc → blo : </span><span class="va">$(</span><span class="fu">wc</span> <span class="at">-l</span> <span class="op">&lt;</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/buc2blo.txt"</span><span class="va">)</span><span class="st">"</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="fu">true</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="blastp-de-blochmannia-ocreatus-hacia-buchnera-aphidicola" class="level2">
+<h2 class="anchored" data-anchor-id="blastp-de-blochmannia-ocreatus-hacia-buchnera-aphidicola">1.4 BLASTP de <em>Blochmannia ocreatus</em> hacia <em>Buchnera aphidicola</em></h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> +e</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="va">DATA</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/data/Practica8</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="va">RES</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/results/Practica8</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/blo2buc.txt"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>   <span class="ex">blastp</span> <span class="at">-query</span> <span class="st">"</span><span class="va">$DATA</span><span class="st">/blochmannia.fasta"</span> <span class="dt">\</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>          <span class="at">-db</span>    <span class="st">"</span><span class="va">$RES</span><span class="st">/buchnera"</span> <span class="dt">\</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>          <span class="at">-out</span>   <span class="st">"</span><span class="va">$RES</span><span class="st">/blo2buc.txt"</span> <span class="dt">\</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>          <span class="at">-outfmt</span> <span class="st">'6 qseqid sseqid qlen slen length evalue bitscore'</span> <span class="dt">\</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">-evalue</span> 0.001 <span class="dt">\</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>          <span class="at">-max_target_seqs</span> 1</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Hits blo → buc : </span><span class="va">$(</span><span class="fu">wc</span> <span class="at">-l</span> <span class="op">&lt;</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/blo2buc.txt"</span><span class="va">)</span><span class="st">"</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="fu">true</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>/bin/bash: line 1: "/blo2buc.txt": No such file or directory
+Command line argument error: Argument "query". File is not accessible:  `/blochmannia.fasta'
+Hits blo → buc : </code></pre>
+</div>
+</div>
+</section>
+<section id="comparación-de-resultados-en-r" class="level2">
+<h2 class="anchored" data-anchor-id="comparación-de-resultados-en-r">1.5 Comparación de resultados en R</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>RES <span class="ot">&lt;-</span> <span class="st">"~/Bioinformatica/results/Practica8"</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>buc2blo <span class="ot">&lt;-</span> <span class="fu">read.table</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>   <span class="fu">file.path</span>(RES, <span class="st">"buc2blo.txt"</span>),</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>   <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">'query'</span>, <span class="st">'subject'</span>, <span class="st">'qlen'</span>, <span class="st">'slen'</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'length'</span>, <span class="st">'evalue'</span>, <span class="st">'bitscore'</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>blo2buc <span class="ot">&lt;-</span> <span class="fu">read.table</span>(</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>   <span class="fu">file.path</span>(RES, <span class="st">"blo2buc.txt"</span>),</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>   <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">'query'</span>, <span class="st">'subject'</span>, <span class="st">'qlen'</span>, <span class="st">'slen'</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>                 <span class="st">'length'</span>, <span class="st">'evalue'</span>, <span class="st">'bitscore'</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(buc2blo)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 query                        subject qlen slen length
+1  sp|P57290|AKH_BUCAI tr|A0ABY4SUV1|A0ABY4SUV1_9ENTR  816  819    820
+2 sp|P57139|GLMU_BUCAI tr|A0ABY4SVX7|A0ABY4SVX7_9ENTR  459  467    443
+3 sp|P57244|CARB_BUCAI tr|A0ABY4ST92|A0ABY4ST92_9ENTR 1079 1082   1076
+4 sp|P57245|CARA_BUCAI tr|A0ABY4STA7|A0ABY4STA7_9ENTR  387  382    374
+5 sp|P57265|FOLC_BUCAI tr|A0ABY4SUG5|A0ABY4SUG5_9ENTR  411  425    414
+6 sp|P57266|KPRS_BUCAI tr|A0ABY4SVP1|A0ABY4SVP1_9ENTR  315  320    313
+     evalue bitscore
+1  0.00e+00      835
+2 4.08e-141      407
+3  0.00e+00     1443
+4 1.32e-156      441
+5 5.43e-108      320
+6  0.00e+00      530</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(blo2buc)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                           query               subject qlen slen length
+1 tr|A0ABY4SVZ2|A0ABY4SVZ2_9ENTR  sp|P57500|CYSG_BUCAI  481  473    459
+2 tr|A0ABY4SSB9|A0ABY4SSB9_9ENTR   sp|P57398|SYS_BUCAI  429  427    430
+3 tr|A0ABY4SSC6|A0ABY4SSC6_9ENTR  sp|P57397|SERC_BUCAI  364  361    363
+4 tr|A0ABY4SSK0|A0ABY4SSK0_9ENTR  sp|P57203|HIS7_BUCAI  359  353    358
+5 tr|A0ABY4SSK3|A0ABY4SSK3_9ENTR  sp|P57207|HIS2_BUCAI  228  215    205
+6 tr|A0ABY4SSL2|A0ABY4SSL2_9ENTR sp|P57254|NUOCD_BUCAI  595  600    593
+     evalue bitscore
+1 5.94e-166      472
+2 5.84e-161      455
+3 2.76e-142      403
+4 1.45e-141      400
+5  4.00e-66      198
+6  0.00e+00      876</code></pre>
+</div>
+</div>
+</section>
+<section id="identificación-de-los-recíprocos-solución-del-profesor" class="level2">
+<h2 class="anchored" data-anchor-id="identificación-de-los-recíprocos-solución-del-profesor">1.6 Identificación de los recíprocos (solución del profesor)</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>buc2blo<span class="sc">$</span>reverse <span class="ot">&lt;-</span> blo2buc[</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>   <span class="fu">match</span>(buc2blo<span class="sc">$</span>subject, blo2buc<span class="sc">$</span>query),</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>   <span class="st">'subject'</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>coincidencias <span class="ot">&lt;-</span> buc2blo[</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>   buc2blo<span class="sc">$</span>query <span class="sc">==</span> buc2blo<span class="sc">$</span>reverse,</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>   <span class="fu">c</span>(<span class="st">'query'</span>, <span class="st">'subject'</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Pares de ortólogos recíprocos:"</span>, <span class="fu">nrow</span>(coincidencias), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Pares de ortólogos recíprocos: 404 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(coincidencias)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 query                        subject
+1  sp|P57290|AKH_BUCAI tr|A0ABY4SUV1|A0ABY4SUV1_9ENTR
+2 sp|P57139|GLMU_BUCAI tr|A0ABY4SVX7|A0ABY4SVX7_9ENTR
+3 sp|P57244|CARB_BUCAI tr|A0ABY4ST92|A0ABY4ST92_9ENTR
+4 sp|P57245|CARA_BUCAI tr|A0ABY4STA7|A0ABY4STA7_9ENTR
+5 sp|P57265|FOLC_BUCAI tr|A0ABY4SUG5|A0ABY4SUG5_9ENTR
+6 sp|P57266|KPRS_BUCAI tr|A0ABY4SVP1|A0ABY4SVP1_9ENTR</code></pre>
+</div>
+</div>
+</section>
+<section id="visualización-longitudes-de-las-parejas-ortólogas" class="level2">
+<h2 class="anchored" data-anchor-id="visualización-longitudes-de-las-parejas-ortólogas">1.7 Visualización (longitudes de las parejas ortólogas)</h2>
+<p>Para ganar confianza en que los resultados tienen sentido, comparamos las longitudes de cada pareja: si son ortólogas, deberían parecerse y caer cerca de la diagonal.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>ortos <span class="ot">&lt;-</span> <span class="fu">merge</span>(coincidencias, buc2blo, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"query"</span>, <span class="st">"subject"</span>))</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ortos<span class="sc">$</span>qlen, ortos<span class="sc">$</span>slen,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">pch =</span> <span class="dv">20</span>, <span class="at">cex =</span> <span class="fl">0.6</span>, <span class="at">col =</span> <span class="st">"steelblue"</span>,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">"Longitud proteína Buchnera (aa)"</span>,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">"Longitud proteína Blochmannia (aa)"</span>,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="fu">paste</span>(<span class="st">"Longitudes de"</span>, <span class="fu">nrow</span>(ortos), <span class="st">"pares de ortólogos"</span>))</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Practica8_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Echa un vistazo a estas tablas de resultados. ¿Sabrías identificar las parejas de proteínas que son recíprocamente la que más se parece una a la otra??</strong></p>
+<p>Sí, se identifican cruzando las dos tablas de resultados. Para cada proteína de Buchnera (query), se observa cuál fue su mejorcoincidencia en Blochmannia . Luego, se comprueba si esa misma proteína de Blochmannia, al usarla como query en la búsqueda inversa, devuelve la proteína original de Buchnera como su subject de mayor puntuación. En R, esto se confirma cuando la columna original coincide con la invertida.</p>
+<p><strong>¿Qué datos te gustaría representar gráficamente para ganar confianza en que los resultados son correctos y tienen sentido?</strong> La opción más útil es representar gráficamente las longitudes de las parejas seleccionadas (qlen vs slen). Al ser proteínas ortólogas, deberían tener un tamaño casi idéntico, por lo que los puntos deben caer muy cerca de la línea diagonal.</p>
+</section>
+</section>
+<section id="ejercicio-2-psi-blast" class="level1">
+<h1>Ejercicio 2 — PSI-BLAST</h1>
+<section id="extracción-de-la-secuencia-query-desde-swissprot" class="level2">
+<h2 class="anchored" data-anchor-id="extracción-de-la-secuencia-query-desde-swissprot">2.1 Extracción de la secuencia query desde Swissprot</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> +e</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="va">DATA</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/data/Practica8</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="va">RES</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/results/Practica8</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Como Swissprot debería estar ya descargada en data/, podemos sacar</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="co"># de ahí la secuencia de la proteína escogida:</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/P39615.fa"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>   <span class="ex">blastdbcmd</span> <span class="at">-db</span> <span class="st">"</span><span class="va">$DATA</span><span class="st">/swissprot"</span> <span class="at">-entry</span> P39615 <span class="at">-out</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/P39615.fa"</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/P39615.fa"</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="fu">true</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="psi-blast-iterativo" class="level2">
+<h2 class="anchored" data-anchor-id="psi-blast-iterativo">2.2 PSI-BLAST iterativo</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> +e</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="va">DATA</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/data/Practica8</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="va">RES</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/results/Practica8</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Y ahora la usamos como query en psi-blast:</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/P39615.blastout.txt"</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>   <span class="ex">psiblast</span> <span class="at">-db</span> <span class="st">"</span><span class="va">$DATA</span><span class="st">/swissprot"</span> <span class="dt">\</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">-query</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/P39615.fa"</span> <span class="dt">\</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">-out</span>   <span class="st">"</span><span class="va">$RES</span><span class="st">/P39615.blastout.txt"</span> <span class="dt">\</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">-evalue</span> 0.1 <span class="dt">\</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>            <span class="at">-outfmt</span> 7 <span class="dt">\</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>            <span class="at">-inclusion_ethresh</span> 0.001 <span class="dt">\</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>            <span class="at">-num_iterations</span> 7 <span class="dt">\</span></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">-matrix</span> BLOSUM62</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Iteraciones realizadas: </span><span class="va">$(</span><span class="fu">grep</span> <span class="at">-c</span> <span class="st">'Iteration'</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/P39615.blastout.txt"</span><span class="va">)</span><span class="st">"</span></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a><span class="fu">true</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="hemos-rescatado-al-resto-de-la-superfamilia" class="level2">
+<h2 class="anchored" data-anchor-id="hemos-rescatado-al-resto-de-la-superfamilia">2.3 ¿Hemos rescatado al resto de la superfamilia?</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="va">RES</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/results/Practica8</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> Q9CC91 P39615 B1AJI8 P47343 Q5UPT2 Q6UDG6 A1AFY9 O59825 P30314<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="fu">grep</span> <span class="at">-q</span> <span class="at">-w</span> <span class="st">"</span><span class="va">$p</span><span class="st">"</span> <span class="st">"</span><span class="va">$RES</span><span class="st">/P39615.blastout.txt"</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>        <span class="bu">echo</span> <span class="st">"✓ </span><span class="va">$p</span><span class="st">  encontrado"</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">echo</span> <span class="st">"✗ </span><span class="va">$p</span><span class="st">  NO encontrado"</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">fi</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="fu">true</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><strong>Consulta la ayuda de psiblast y asegúrate de entender para qué sirven los argumentos que hemos usado. Por ejemplo, ¿cuál es la diferencia entre -evalue y -inclusion_ethresh?¿Cómo harías que la búsqueda fuera más sensible todavía?</strong></p>
+<p>Diferencia entre <code>-evalue</code> y <code>-inclusion_ethresh</code></p>
+<ul>
+<li><strong><code>-evalue 0.1</code></strong> es el umbral <em>para mostrar</em> un hit en la salida. Bastante permisivo, para no perder candidatos.</li>
+<li><strong><code>-inclusion_ethresh 0.001</code></strong> es el umbral <em>para incluir</em> un hit en la matriz PSSM de la siguiente iteración. Es mucho más estricto, porque un falso positivo aquí contamina las iteraciones posteriores.</li>
+</ul>
+<p>Para hacer la búsqueda más sensible</p>
+<ul>
+<li>Aumentar <code>-num_iterations</code> (10 o 15).</li>
+<li>Cambiar a una matriz más sensible: <code>-matrix BLOSUM45</code>.</li>
+<li>Aflojar <code>-inclusion_ethresh</code> (cuidao <em>profile drift</em>).</li>
+</ul>
+</section>
+</section>
+<section id="ejercicio-3-origen-de-la-contaminación-en-lecturas-de-aphis-aurantii" class="level1">
+<h1>Ejercicio 3 — Origen de la contaminación en lecturas de <em>Aphis aurantii</em></h1>
+<section id="selección-aleatoria-de-20-secuencias" class="level2">
+<h2 class="anchored" data-anchor-id="selección-aleatoria-de-20-secuencias">3.1 Selección aleatoria de 20 secuencias</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressPackageStartupMessages</span>(<span class="fu">library</span>(<span class="st">'Biostrings'</span>))</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>DATA <span class="ot">&lt;-</span> <span class="st">"~/Bioinformatica/data/Practica8"</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>RES  <span class="ot">&lt;-</span> <span class="st">"~/Bioinformatica/results/Practica8"</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>unmapped <span class="ot">&lt;-</span> <span class="fu">readDNAStringSet</span>(<span class="fu">file.path</span>(DATA, <span class="st">"contaminacion.fa.gz"</span>))</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">length</span>(unmapped)</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Total de lecturas no mapeadas:"</span>, n, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total de lecturas no mapeadas: 33174 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)   <span class="co"># quítalo si quieres una muestra distinta cada vez</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>muestra <span class="ot">&lt;-</span> unmapped[<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>n, <span class="dv">20</span>)]</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="fu">writeXStringSet</span>(muestra, <span class="fu">file.path</span>(RES, <span class="st">"muestra.fa"</span>))</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">names</span>(muestra))</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "SRR13258790.287025" "SRR13258790.462797" "SRR13258790.260862"
+[4] "SRR13258790.293293" "SRR13258790.393177" "SRR13258790.713265"</code></pre>
+</div>
+</div>
+</section>
+<section id="blastn-remoto-contra-nr" class="level2">
+<h2 class="anchored" data-anchor-id="blastn-remoto-contra-nr">3.2 BLASTN remoto contra <code>nr</code></h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> +e</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="va">RES</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/results/Practica8</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="st">"</span><span class="va">$RES</span><span class="st">"</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> resultado.txt <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>   <span class="ex">blastn</span> <span class="at">-query</span> muestra.fa <span class="dt">\</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>          <span class="at">-db</span> nr <span class="dt">\</span></span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>          <span class="at">-out</span> resultado.txt <span class="dt">\</span></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>          <span class="at">-outfmt</span> <span class="st">'6 qaccver saccver length qlen qstart qend evalue bitscore staxid'</span> <span class="dt">\</span></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>          <span class="at">-max_target_seqs</span> 1 <span class="dt">\</span></span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>          <span class="at">-evalue</span> 0.001 <span class="dt">\</span></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>          <span class="at">-remote</span> <span class="dv">2</span><span class="op">&gt;</span> /dev/null</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Hits obtenidos: </span><span class="va">$(</span><span class="fu">wc</span> <span class="at">-l</span> <span class="op">&lt;</span> resultado.txt<span class="va">)</span><span class="st">"</span></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> resultado.txt</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a><span class="fu">true</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="identificación-taxonómica-con-datasets-y-dataformat" class="level2">
+<h2 class="anchored" data-anchor-id="identificación-taxonómica-con-datasets-y-dataformat">3.3 Identificación taxonómica con <code>datasets</code> y <code>dataformat</code></h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> +e</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="va">RES</span><span class="op">=</span>/mnt/c/Documents/Bioinformatica/results/Practica8</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="st">"</span><span class="va">$RES</span><span class="st">"</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Extraemos los identificadores taxonómicos (columna 9) de "resultado.txt":</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="fu">cut</span> <span class="at">-f</span> 9 resultado.txt <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">uniq</span> <span class="kw">|</span> <span class="fu">paste</span> <span class="at">-sd</span> <span class="st">','</span> <span class="op">&gt;</span> taxids.txt</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> taxids.txt</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Generamos una tabla con información taxonómica de esos identificadores:</span></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">!</span> <span class="ot">-e</span> taxreport.txt <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>   <span class="ex">datasets</span> summary taxonomy taxon <span class="va">$(</span><span class="fu">cat</span> taxids.txt<span class="va">)</span> <span class="at">--as-json-lines</span> <span class="kw">|</span> <span class="dt">\</span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>   <span class="ex">dataformat</span> tsv taxonomy <span class="at">--template</span> tax-summary <span class="op">&gt;</span> taxreport.txt</span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span> taxreport.txt</span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a><span class="fu">true</span></span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="análisis-en-r-hemípteros-vs-el-resto" class="level2">
+<h2 class="anchored" data-anchor-id="análisis-en-r-hemípteros-vs-el-resto">3.4 Análisis en R: hemípteros vs el resto</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>RES <span class="ot">&lt;-</span> <span class="st">"~/Bioinformatica/results/Practica8"</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Resultados del BLAST</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>blast <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="fu">file.path</span>(RES, <span class="st">"resultado.txt"</span>),</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>   <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"qaccver"</span>, <span class="st">"saccver"</span>, <span class="st">"length"</span>, <span class="st">"qlen"</span>,</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"qstart"</span>, <span class="st">"qend"</span>, <span class="st">"evalue"</span>, <span class="st">"bitscore"</span>, <span class="st">"taxid"</span>),</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>   <span class="at">sep =</span> <span class="st">"</span><span class="sc">\t</span><span class="st">"</span>, <span class="at">quote =</span> <span class="st">""</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Informe taxonómico</span></span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>tax <span class="ot">&lt;-</span> <span class="fu">read.table</span>(<span class="fu">file.path</span>(RES, <span class="st">"taxreport.txt"</span>),</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>                  <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">sep =</span> <span class="st">"</span><span class="sc">\t</span><span class="st">"</span>,</span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>                  <span class="at">quote =</span> <span class="st">""</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Mostramos qué columnas tiene tax para que se vea en el render</span></span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Columnas de tax:</span><span class="sc">\n</span><span class="st">"</span>); <span class="fu">print</span>(<span class="fu">names</span>(tax))</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Columnas de tax:</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "Query"                     "Taxid"                    
+ [3] "Tax.name"                  "Authority"                
+ [5] "Rank"                      "Basionym"                 
+ [7] "Basionym.authority"        "Curator.common.name"      
+ [9] "Has.type.material"         "Group.name"               
+[11] "Domain.Realm.name"         "Domain.Realm.taxid"       
+[13] "Kingdom.name"              "Kingdom.taxid"            
+[15] "Phylum.name"               "Phylum.taxid"             
+[17] "Class.name"                "Class.taxid"              
+[19] "Order.name"                "Order.taxid"              
+[21] "Family.name"               "Family.taxid"             
+[23] "Genus.name"                "Genus.taxid"              
+[25] "Species.name"              "Species.taxid"            
+[27] "Scientific.name.is.formal"</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># === Detección automática de la columna del taxid ===</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="co"># La primera columna que contenga solo números enteros es, casi seguro, el taxid</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>es_taxid <span class="ot">&lt;-</span> <span class="fu">sapply</span>(tax, <span class="cf">function</span>(x) <span class="fu">all</span>(<span class="fu">grepl</span>(<span class="st">"^[0-9]+$"</span>, <span class="fu">trimws</span>(<span class="fu">as.character</span>(x)))))</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>col_tax  <span class="ot">&lt;-</span> <span class="fu">names</span>(tax)[<span class="fu">which</span>(es_taxid)[<span class="dv">1</span>]]</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Columna del taxid detectada:"</span>, col_tax, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Columna del taxid detectada: Query </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Forzamos tipos compatibles</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>tax[[col_tax]] <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(tax[[col_tax]])</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>blast<span class="sc">$</span>taxid    <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(blast<span class="sc">$</span>taxid)</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Merge</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">merge</span>(blast, tax,</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>             <span class="at">by.x =</span> <span class="st">"taxid"</span>,</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>             <span class="at">by.y =</span> col_tax,</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>             <span class="at">all.x =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Filas tras el merge:"</span>, <span class="fu">nrow</span>(res), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Filas tras el merge: 22 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(res)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    taxid            qaccver        saccver length qlen qstart qend    evalue
+1   44670 SRR13258790.393177 XM_061025703.1    217  363      1  216  2.24e-99
+2  224526 SRR13258790.295774     OZ317419.1    225  201      1  199  2.05e-37
+3  935663 SRR13258790.147078     OZ463195.1    272  272      1  272 5.52e-134
+4  935663 SRR13258790.147078     OZ463195.1    194  272     18  201  4.95e-30
+5  935663 SRR13258790.147078     OZ463195.1    272  272      1  272 1.19e-135
+6 1470492 SRR13258790.287025     CP135018.1    222  219      1  219 3.47e-100
+  bitscore   Taxid                             Tax.name        Authority
+1      377   44670               Metopolophium dirhodum   (Walker, 1849)
+2      171  224526                  Brachycaudus cardui                 
+3      492  935663                      Phyllaphis fagi (Linnaeus, 1767)
+4      147  935663                      Phyllaphis fagi (Linnaeus, 1767)
+5      497  935663                      Phyllaphis fagi (Linnaeus, 1767)
+6      379 1470492 Buchnera aphidicola (Aphis aurantii)                 
+             Rank Basionym Basionym.authority Curator.common.name
+1         SPECIES       NA                 NA    rose-grain aphid
+2         SPECIES       NA                 NA                    
+3         SPECIES       NA                 NA                    
+4         SPECIES       NA                 NA                    
+5         SPECIES       NA                 NA                    
+6 FORMA_SPECIALIS       NA                 NA                    
+  Has.type.material     Group.name Domain.Realm.name Domain.Realm.taxid
+1                no         aphids         Eukaryota               2759
+2                no         aphids         Eukaryota               2759
+3                no         aphids         Eukaryota               2759
+4                no         aphids         Eukaryota               2759
+5                no         aphids         Eukaryota               2759
+6                no enterobacteria          Bacteria                  2
+    Kingdom.name Kingdom.taxid    Phylum.name Phylum.taxid          Class.name
+1        Metazoa         33208     Arthropoda         6656             Insecta
+2        Metazoa         33208     Arthropoda         6656             Insecta
+3        Metazoa         33208     Arthropoda         6656             Insecta
+4        Metazoa         33208     Arthropoda         6656             Insecta
+5        Metazoa         33208     Arthropoda         6656             Insecta
+6 Pseudomonadati       3379134 Pseudomonadota         1224 Gammaproteobacteria
+  Class.taxid       Order.name Order.taxid Family.name Family.taxid
+1       50557        Hemiptera        7524   Aphididae        27482
+2       50557        Hemiptera        7524   Aphididae        27482
+3       50557        Hemiptera        7524   Aphididae        27482
+4       50557        Hemiptera        7524   Aphididae        27482
+5       50557        Hemiptera        7524   Aphididae        27482
+6        1236 Enterobacterales       91347 Erwiniaceae      1903409
+     Genus.name Genus.taxid           Species.name Species.taxid
+1 Metopolophium       44669 Metopolophium dirhodum         44670
+2  Brachycaudus      224525    Brachycaudus cardui        224526
+3    Phyllaphis      527840        Phyllaphis fagi        935663
+4    Phyllaphis      527840        Phyllaphis fagi        935663
+5    Phyllaphis      527840        Phyllaphis fagi        935663
+6      Buchnera       32199    Buchnera aphidicola             9
+  Scientific.name.is.formal
+1                      TRUE
+2                      TRUE
+3                      TRUE
+4                      TRUE
+5                      TRUE
+6                     FALSE</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># === Análisis hemípteros / plantas / resumen ===</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>col_orden <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">"order"</span>,   <span class="fu">names</span>(res), <span class="at">value =</span> <span class="cn">TRUE</span>, <span class="at">ignore.case =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span>]</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>col_reino <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">"kingdom|superkingdom"</span>, <span class="fu">names</span>(res),</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">value =</span> <span class="cn">TRUE</span>, <span class="at">ignore.case =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span>]</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>col_nombre <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">"organism.*name|scientific.*name|species"</span>,</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">names</span>(res), <span class="at">value =</span> <span class="cn">TRUE</span>, <span class="at">ignore.case =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span>]</span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Usando columnas:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Usando columnas:</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"  Reino  →"</span>, col_reino,  <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Reino  → Kingdom.name </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"  Orden  →"</span>, col_orden,  <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Orden  → Order.name </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"  Nombre →"</span>, col_nombre, <span class="st">"</span><span class="sc">\n\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Nombre → Species.name </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fracción de hemípteros</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.na</span>(col_orden)) {</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>    es_hemiptero <span class="ot">&lt;-</span> <span class="fu">grepl</span>(<span class="st">"Hemiptera"</span>, res[[col_orden]], <span class="at">ignore.case =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"Hemípteros:"</span>, <span class="fu">sum</span>(es_hemiptero, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="st">"/"</span>, <span class="fu">nrow</span>(res),</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">" ("</span>, <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> <span class="fu">mean</span>(es_hemiptero, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">1</span>), <span class="st">"%)</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Hemípteros: 5 / 22  ( 22.7 %)</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fracción de plantas</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.na</span>(col_reino)) {</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>    es_planta <span class="ot">&lt;-</span> <span class="fu">grepl</span>(<span class="st">"Viridiplantae|Plantae"</span>,</span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>                       res[[col_reino]], <span class="at">ignore.case =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"Plantas   :"</span>, <span class="fu">sum</span>(es_planta, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="st">"/"</span>, <span class="fu">nrow</span>(res), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Plantas   : 0 / 22 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Tablas resumen</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.na</span>(col_reino)) {</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">--- Por reino ---</span><span class="sc">\n</span><span class="st">"</span>); <span class="fu">print</span>(<span class="fu">table</span>(res[[col_reino]], <span class="at">useNA =</span> <span class="st">"ifany"</span>))</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+--- Por reino ---
+
+       Metazoa Pseudomonadati 
+             5             17 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.na</span>(col_orden)) {</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">--- Por orden ---</span><span class="sc">\n</span><span class="st">"</span>); <span class="fu">print</span>(<span class="fu">table</span>(res[[col_orden]], <span class="at">useNA =</span> <span class="st">"ifany"</span>))</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+--- Por orden ---
+
+Enterobacterales        Hemiptera 
+              17                5 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.na</span>(col_nombre)) {</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">--- Organismos encontrados ---</span><span class="sc">\n</span><span class="st">"</span>); <span class="fu">print</span>(<span class="fu">table</span>(res[[col_nombre]]))</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copiar al portapapeles" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+--- Organismos encontrados ---
+
+   Brachycaudus cardui    Buchnera aphidicola Metopolophium dirhodum 
+                     1                     17                      1 
+       Phyllaphis fagi 
+                     3 </code></pre>
+</div>
+</div>
+<p><strong>Puedes importar tanto los resultados del BLAST como el informe taxonómico a una sesión de R y determinar que fracción de las lecturas seleccionadas parecen proceder de un hemímptero y qué fracción proceden de otros organismos. Tienen sentido los resultados? Encuentras alguna secuencia de origen vegetal?</strong></p>
+<p>Si, tienen sentido. Hemípteros: Encontramos secuencias de hemípteros Aphis aurantii es un hemíptero. Estas lecturas aparecen como “contaminación”. Plantas:Se encuentran secuencias de origen vegetal. Dado que este insecto (un pulgón) se alimenta de la savia de las plantas, al secuenciarlo el individuo entero contrenda DNA de plantas en el.</p>
+<p>No se han encontrado secuencias de origen vegetal pero podria pasar.</p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copiado");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copiado");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

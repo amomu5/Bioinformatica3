@@ -1,0 +1,107 @@
+# ============================================================
+# .gitignore de Bioinformatica3
+# Estrategia: en data/ se ignora todo por defecto y se permite
+# explícitamente solo lo que NO regenera ninguna práctica.
+# En results/ se sube todo menos lo que sí regeneran las prácticas.
+# ============================================================
+
+# ---------------- DATA: solo inputs originales ----------------
+data/**
+# Permitir entrar en las subcarpetas
+!data/Practica*/
+# .gitkeep en cada subcarpeta (para preservar carpetas vacías)
+!data/**/.gitkeep
+# Inputs reales (no regenerables sin descargar de la web)
+!data/Practica4/README.md
+!data/Practica4/md5sum.txt
+!data/Practica4/trypanosoma_annotated.txt
+!data/Practica8/blochmannia.fasta
+!data/Practica8/buchnera.fasta
+!data/Practica8/contaminacion.fa.gz
+!data/Practica9/mtDNA.fasta
+!data/Practica10/At4.10.fa.gz
+!data/Practica11/uniprotkb_proteome_UP000006548_AND_prot_2026_05_17.fasta
+!data/Practica12/dme_elev_samples.tsv
+!data/Practica12/salmon.merged.gene_counts.tsv
+
+# ---------------- RESULTS: ignoro lo generado ----------------
+# Práctica 1 — alineamientos generados
+results/Practica1/alng*/
+results/Practica1/PF00009*
+
+# Práctica 3 — mapeo: SAM/BAM, fastqs recortados, fastp
+results/Practica3/*.bam
+results/Practica3/*.bam.bai
+results/Practica3/*.sam
+results/Practica3/*.fastq
+results/Practica3/*.fastq.gz
+results/Practica3/fastp*
+results/Practica3/COV.txt
+results/Practica3/bwa.*
+
+# Práctica 4 — ncbi_dataset descargado
+results/Practica4/ncbi_dataset/
+results/Practica4/ncbi_dataset.zip
+results/Practica4/md5sum.txt
+results/Practica4/README.md
+
+# Práctica 5 — alineamientos generados
+results/Practica5/z*.txt
+
+# Práctica 7 — gwas regenerado
+results/Practica7/gwas.txt
+
+# Práctica 8 — BLAST DBs y resultados BLAST
+results/Practica8/buchnera.p*
+results/Practica8/blochmannia.p*
+results/Practica8/*_seg.asnb
+results/Practica8/buc2blo.txt
+results/Practica8/blo2buc.txt
+results/Practica8/muestra.fa
+results/Practica8/P39615*
+results/Practica8/resultado.txt
+results/Practica8/taxids.txt
+results/Practica8/taxreport.txt
+
+# Práctica 10 — ensamblaje hifiasm
+results/Practica10/asm1/
+results/Practica10/hifiasm*
+
+# Práctica 11 — RepeatModeler, RepeatMasker, GALBA
+results/Practica11/At4*
+results/Practica11/proteinas.fasta
+results/Practica11/RM_*/
+results/Practica11/RepetaMasker/
+results/Practica11/GALBA/
+
+# ---------------- Quarto y R ----------------
+# Librerías que Quarto regenera al render (Bootstrap, fuentes, JS…)
+*_files/libs/
+.quarto/
+
+# Sesión de R
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj.user/
+
+# Carpetas auto-generadas
+_book/
+_freeze/
+_site/
+
+# ---------------- Sistema operativo ----------------
+.DS_Store
+Thumbs.db
+
+# ---------------- Código clonado de terceros ----------------
+# bwa, freebayes y similares son repositorios externos: no van al repo
+/bwa/
+/freebayes/
+/hifiasm/
+
+# ---------------- Otros ----------------
+*.tar.gz
+*.zip
+!data/**/*.tar.gz
+!data/**/*.zip

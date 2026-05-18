@@ -1,0 +1,180 @@
+---
+  title: "Practica11"
+  format: html
+  engine: knitr
+---
+
+Ejercicio 1 — Renombrar las cabeceras del FASTA de proteínas
+La idea es: el archivo de Uniprot descargado vive en data/, el resultado limpio (proteinas.fasta) vive en la carpeta de trabajo de esta práctica, y el chunk solo lo regenera si todavía no existe.
+
+
+```{bash}
+set +e
+set +o pipefail 2>/dev/null
+
+
+DATA=/mnt/c/Documents/Bioinformatica/data/Practica11
+WORK=/mnt/c/Documents/Bioinformatica/results/Practica11
+
+
+INPUT="$DATA/uniprotkb_proteome_UP000006548_AND_prot_2026_05_17.fasta"
+OUTPUT="$WORK/proteinas.fasta"
+
+mkdir -p "$WORK"
+
+if [ ! -f "$OUTPUT" ]; then
+    if [ ! -f "$INPUT" ]; then
+        echo "ERROR: no encuentro el FASTA de Uniprot en $INPUT"
+        true; exit 0
+    fi
+    echo "Generando $OUTPUT a partir de $INPUT ..."
+    awk '(/^>/){split($1, A, /\|/); print ">" A[2]} (/^[^>]/){print $0}' \
+        "$INPUT" > "$OUTPUT"
+    echo "Hecho."
+else
+    echo "Ya existe $OUTPUT, no se vuelve a generar."
+fi
+
+# Comprobación rápida
+echo "Primeras 4 líneas:"
+head -n 4 "$OUTPUT"
+echo "Número de proteínas: $(grep -c '^>' "$OUTPUT")"
+
+true
+```
+Lo del if [ ! -f "$OUTPUT" ] : si proteinas.fasta ya está, no se regenera. 6 023 cabeceras.
+
+
+
+Ejercicio 2 — Resultados de RepeatModeler
+markdown# Ejercicio 2 — Resultados de RepeatModeler
+
+```{bash}
+set +e
+WORK=/mnt/c/Documents/Bioinformatica/results/Practica11
+
+# Carpeta de salida de RepeatModeler (cámbiala por la tuya: empieza por RM_*)
+RMDIR=$(ls -d "$WORK"/RM_* 2>/dev/null | head -n 1)
+echo "Carpeta de RepeatModeler: $RMDIR"
+
+echo "---- 1) Nº de familias de elementos transponibles ----"
+# Las familias quedan como cabeceras en At4-families.fa
+grep -c '^>' "$WORK/At4-families.fa"
+# (equivalente, contando entradas en el Stockholm)
+grep -c '^#=GF ID' "$RMDIR/families.stk"
+
+echo "---- 2) Duración de la ejecución ----"
+grep -E "Program Time|Time spent|Run time" "$RMDIR/rmod.log" "$WORK/run.log" 2>/dev/null
+
+true
+```
+Respuestas que vas a poner debajo:
+
+¿Cuántas familias se han encontrado? 
+El número lo da grep grep -c '^>' At4-families.fa y grep -c '^#=GF ID' families.stk debería coincidir.  
+24 faminilias de elementos transponibles.
+¿Cuánto duró la ejecución? 1:02
+
+¿Cuál es el archivo de salida más importante?
+
+En la carpeta principal hay At4-families.fa y At4-families.stk. El más útil es At4-families.fa: es el FASTA con las secuencias consenso de las familias de elementos transponibles, 
+
+Ejercicio 3 — Instalar bedtools y generar la máscara suave
+3.1 Instalación en WSL (Ubuntu)
+markdown## Instalación de bedtools
+
+```{bash}
+#| eval: false
+# En la terminal de WSL 
+sudo apt update
+sudo apt install -y bedtools
+
+# Verificación
+bedtools --version
+```
+
+
+3.2 Generación del FASTA con máscara suave
+bedtools maskfasta lleva tres argumentos clave: -fi (input FASTA original sin enmascarar), -bed (archivo BED/GFF con las regiones a enmascarar), -fo (output) y -soft para pasar de hard-mask a soft-mask (minúsculas en lugar de Ns).
+markdown## Máscara suave con bedtools
+
+
+```{bash}
+#Ayuda de gemini en algunas partes porque no me estaba funcionando
+set +e
+WORK=/mnt/c/Documents/Bioinformatica/results/Practica11
+
+# Ensamblaje 
+GENOME=/mnt/c/Documents/Bioinformatica/results/Practica10/asm1/At4.fa
+
+# Archivo GFF de RepeatMasker
+RM_GFF="$WORK/RepetaMasker/RM01/At4.fa.out.gff"
+
+# Salida
+OUT="$WORK/At4.soft.fa"
+
+#No me encontraba bedtools, le he puesto la absoluta para que pueda llegar a esta ella. 
+BEDTOOLS=/home/aleee14/miniforge3/bin/bedtools
+
+echo "Genoma  : $GENOME"
+echo "GFF RM  : $RM_GFF"
+echo "Salida  : $OUT"
+
+if [ ! -f "$OUT" ]; then
+$BEDTOOLS maskfasta -soft \
+        -fi "$GENOME" \
+        -bed "$RM_GFF" \
+        -fo "$OUT"
+    echo "Máscara suave creada."
+else
+    echo "Ya existe $OUT, no se vuelve a generar."
+fi
+
+# Pequeña comprobación: ¿hay minúsculas (regiones enmascaradas)?
+echo "Fragmento (primeras 200 bases del primer contig):"
+awk '/^>/{n++; if(n==2) exit} n==1 && !/^>/{printf "%s", $0}' "$OUT" | head -c 200
+echo
+echo "Nº total de bases en minúscula (regiones soft-masked):"
+grep -v '^>' "$OUT" | tr -cd 'acgt' | wc -c
+
+true
+```
+Nº total de bases en minúscula (regiones soft-masked):
+4773736
+
+-soft es el flag que convierte "máscara dura" (Ns) en "máscara suave" (letras minúsculas). 
+Estamos usando como input el ensamblaje original sin enmascarar (el At4.fa de la Práctica 10) y como BED el GFF de salida de RepeatMasker: bedtools coge GFF perfectamente, no hace falta convertir a BED.
+La última cuenta cuántas bases que han quedado en minúsculas. Qué fracción del genoma estaba ocupada por repeticiones.
+
+
+#Ejercicio 4
+
+```{bash
+export TSEBRA_PATH=/home/aleee14/bin/TSEBRA/bin/
+export MINIPROTHINT_PATH=/home/aleee14/bin/miniprothint/
+
+galba.pl --species="Arabidopsis thaliana" \
+         --genome=At4.soft.fa \
+         --prot_seq=proteinas.fasta
+```
+
+
+Descargar galba.zip
+
+#Ejercicio 5
+
+4 362 genes para el cromosoma 4 de Arabidopsis thaliana . TAIR10 (la anotación de referencia) registra ~5 000 genes en ese cromosoma, así que GALBA ha capturado en torno al 85–90 % de todos.
+
+La cobertura HiFi era (~12×) y el ensamblaje tiene 24 contigs (no es un cromosoma cerrado), así que algunos genes pueden caer en regiones partidas o ausentes.
+GALBA solo usa proteínas como evidencia (sin RNA-seq), no o casi no detecta genes muuy divergentes o que se expresen  poco. 
+
+3677 genes  en ptg000004l    
+ 482 genes  en ptg000002l    
+ 186 genes  en ptg000001l    
+  17 genes  en  ptg000003l    
+
+4362 genes  en solo 4 contigs
+
+ptg000004l es el contig principal que cubre la mayor parte del cromosoma 4. Los otros 20 contigs no llevan genes anotados → son fragmentos cortos, regiones repetitivas, o errores de ensamblaje
+
+

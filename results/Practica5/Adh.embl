@@ -1,0 +1,355 @@
+ID   AAC39011; SV 1; linear; genomic DNA; STD; INV; 290 BP.
+XX
+PA   AF059891.1
+XX
+DT   28-APR-1998 (Rel. 55, Created)
+DT   15-APR-2005 (Rel. 83, Last updated, Version 2)
+XX
+DE   Drosophila robusta partial alcohol dehydrogenase
+XX
+KW   .
+XX
+OS   Drosophila robusta
+OC   Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Hexapoda; Insecta; Pterygota;
+OC   Neoptera; Holometabola; Diptera; Brachycera; Muscomorpha; Ephydroidea;
+OC   Drosophilidae; Drosophila.
+XX
+RN   [1]
+RP   1-290
+RX   DOI; 10.1006/mpev.1997.0484.
+RX   PUBMED; 9562982.
+RA   Remsen J., DeSalle R.;
+RT   "Character congruence of multiple data partitions and the origin of the
+RT   Hawaiian Drosophilidae";
+RL   Mol. Phylogenet. Evol. 9(2):225-235(1998).
+XX
+RN   [2]
+RP   1-290
+RA   Remsen J., DeSalle R.;
+RT   ;
+RL   Submitted (16-APR-1998) to the INSDC.
+RL   Entomology, American Museum of Natural History, Central Park West at 79th
+RL   Street, New York, NY 10024-5192, USA
+XX
+DR   MD5; 31925b08a8076b5bf06edc988cc3f400.
+XX
+FH   Key             Location/Qualifiers
+FH
+FT   source          1..290
+FT                   /organism="Drosophila robusta"
+FT                   /mol_type="genomic DNA"
+FT                   /db_xref="taxon:7257"
+FT   CDS             AF059891.1:<1..>290
+FT                   /codon_start=2
+FT                   /gene="Adh"
+FT                   /product="alcohol dehydrogenase"
+FT                   /db_xref="GOA:O61692"
+FT                   /db_xref="InterPro:IPR002347"
+FT                   /db_xref="InterPro:IPR002425"
+FT                   /db_xref="InterPro:IPR036291"
+FT                   /db_xref="UniProtKB/TrEMBL:O61692"
+FT                   /protein_id="AAC39011.1"
+FT                   /translation="LKAINPKVAVTFYPYYVTESVAETTKLLKTILDKLNTVDLLINGA
+FT                   GILDDYQIERTIAVNFAGTVNTTTAIMEFWDKRKGGPGGVIANICSVTGFN"
+XX
+SQ   Sequence 290 BP; 74 A; 62 C; 76 G; 78 T; 0 other;
+     gttgaaggca atcaatccca aggtggccgt tacattctat ccctattatg taactgagtc        60
+     ggtggcagaa actacaaagc tgctaaagac cattttggac aagctgaaca cggtggattt       120
+     gctcatcaat ggcgctggaa ttctggacga ttatcagatt gagcgcacta ttgcggtcaa       180
+     tttcgccggt acggttaata ctacaactgc cattatggag ttctgggata agcgcaaggg       240
+     cggcccaggc ggtgttattg ccaacatctg ttcggtgact ggctttaatg                  290
+//
+ID   AAY25307; SV 1; linear; genomic DNA; STD; INV; 711 BP.
+XX
+PA   AY750139.1
+XX
+DT   31-DEC-2005 (Rel. 86, Created)
+DT   20-JUL-2006 (Rel. 88, Last updated, Version 2)
+XX
+DE   Drosophila sordidula partial alcohol dehydrogenase
+XX
+KW   .
+XX
+OS   Drosophila sordidula
+OC   Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Hexapoda; Insecta; Pterygota;
+OC   Neoptera; Holometabola; Diptera; Brachycera; Muscomorpha; Ephydroidea;
+OC   Drosophilidae; Drosophila.
+XX
+RN   [1]
+RP   1-911
+RX   DOI; 10.1016/j.ympev.2006.03.026.
+RX   PUBMED; 16678448.
+RA   Wang B.C., Park J., Watabe H.A., Gao J.J., Xiangyu J.G., Aotsuka T.,
+RA   Chen H.W., Zhang Y.P.;
+RT   "Molecular phylogeny of the Drosophila virilis section (Diptera:
+RT   Drosophilidae) based on mitochondrial and nuclear sequences";
+RL   Mol. Phylogenet. Evol. 40(2):484-500(2006).
+XX
+RN   [2]
+RP   1-911
+RA   Wang B.-C., Park J., Watabe H.-A., Gao J.-J., Aotsuka T., Chen H.-W.,
+RA   Zhang Y.-P.;
+RT   ;
+RL   Submitted (13-SEP-2004) to the INSDC.
+RL   Lab of Cellular and Molecular Evolution, Kunming Institute of Zoology, 32
+RL   Jiaochang Donglu, Kunming, Yunnan 650223, China
+XX
+DR   MD5; 67f572109c7e9f7bb1cc535ea1549ede.
+XX
+FH   Key             Location/Qualifiers
+FH
+FT   source          1..711
+FT                   /organism="Drosophila sordidula"
+FT                   /mol_type="genomic DNA"
+FT                   /db_xref="taxon:55950"
+FT   CDS             join(AY750139.1:<1..60,AY750139.1:161..565,
+FT                   AY750139.1:666..>911)
+FT                   /codon_start=1
+FT                   /gene="Adh"
+FT                   /product="alcohol dehydrogenase"
+FT                   /db_xref="GOA:Q9U8P2"
+FT                   /db_xref="InterPro:IPR002347"
+FT                   /db_xref="InterPro:IPR002425"
+FT                   /db_xref="InterPro:IPR020904"
+FT                   /db_xref="InterPro:IPR036291"
+FT                   /db_xref="UniProtKB/TrEMBL:Q9U8P2"
+FT                   /protein_id="AAY25307.1"
+FT                   /translation="AGLGGIGLDTSREIVKSGPKNLVILDRIENPVAIAELKAINPKVA
+FT                   VTFYPYDVTVSVAETTKLLKTIFTKLTTVDLLINGAGILDDYQIERTIAVNFAGTVNTT
+FT                   TAIMEFWDKRKGGPGGVIANICSVTGFNAIYQVPVYSASKAAALSFTNSLAKLARITGV
+FT                   TAYSINPGITKTTLVHKFNSWLDVEPRVGELLLEYPTQTTLQCAQNFVKAIEANKNGAI
+FT                   WKLDLGRLDPIEWTK"
+XX
+SQ   Sequence 711 BP; 176 A; 180 C; 182 G; 173 T; 0 other;
+     gctggtctgg gtggcatagg actggacacc agccgcgaaa ttgtgaagag cggcccaaag        60
+     aacctagtga tccttgatcg cattgagaac ccggttgcta ttgccgagtt gaaggcaatc       120
+     aatcccaagg tggccgttac attctatccc tatgatgtaa ctgtgtcggt ggcagaaact       180
+     acaaagctgc taaagaccat tttcaccaag ctaaccacgg tggatttgct catcaatggc       240
+     gctggaattc tcgacgatta tcagattgag cgcactattg cggtcaattt tgccggtacg       300
+     gttaatacta caactgccat tatggagttc tgggataagc gcaagggcgg cccaggcggt       360
+     gttattgcca acatctgctc ggtgactggc tttaatgcca tctaccaggt gccagtttac       420
+     tccgcctcaa aggcggctgc tctgagtttc accaattcgc tggcgaaact ggctcgtatc       480
+     accggcgtaa cagcctattc catcaatcct ggcattacga agacgaccct agtgcacaaa       540
+     ttcaactcgt ggctggatgt cgagccacgt gtgggcgagt tacttcttga gtatcctact       600
+     cagacgacac tgcagtgtgc ccagaacttt gtcaaggcta ttgaggccaa caagaatggc       660
+     gccatttgga aactagattt gggccgcctg gaccccattg aatggaccaa a                711
+//
+ID   ABU44510; SV 1; linear; genomic DNA; STD; INV; 500 BP.
+XX
+PA   EF560575.1
+XX
+DT   01-MAY-2008 (Rel. 95, Created)
+DT   12-JUL-2008 (Rel. 96, Last updated, Version 2)
+XX
+DE   Drosophila gasici partial alcohol dehydrogenase
+XX
+KW   .
+XX
+OS   Drosophila gasici
+OC   Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Hexapoda; Insecta; Pterygota;
+OC   Neoptera; Holometabola; Diptera; Brachycera; Muscomorpha; Ephydroidea;
+OC   Drosophilidae; Drosophila.
+XX
+RN   [1]
+RP   1-622
+RX   DOI; 10.2108/zsj.25.526.
+RX   PUBMED; 18558806.
+RA   Mota N.R., Robe L.J., Valente V.L., Budnik M., Loreto E.L.;
+RT   "Phylogeny of the Drosophila mesophragmatica group (Diptera,
+RT   Drosophilidae): an example of Andean evolution";
+RL   Zool. Sci. 25(5):526-532(2008).
+XX
+RN   [2]
+RP   1-622
+RA   Mota N.R., Loreto E.L.S.;
+RT   ;
+RL   Submitted (16-APR-2007) to the INSDC.
+RL   Genetica, UFRGS, Bento Goncalves, 9500, Porto Alegre, RS 91501970, Brazil
+XX
+DR   MD5; f38d080c78ec760cf682e3991a45c6a8.
+XX
+FH   Key             Location/Qualifiers
+FH
+FT   source          1..500
+FT                   /organism="Drosophila gasici"
+FT                   /mol_type="genomic DNA"
+FT                   /country="Bolivia"
+FT                   /pop_variant="Cochabamba"
+FT                   /db_xref="taxon:306028"
+FT   CDS             join(EF560575.1:<1..16,EF560575.1:77..481,
+FT                   EF560575.1:544..>622)
+FT                   /codon_start=2
+FT                   /gene="adh"
+FT                   /product="alcohol dehydrogenase"
+FT                   /db_xref="GOA:B2KN47"
+FT                   /db_xref="InterPro:IPR002347"
+FT                   /db_xref="InterPro:IPR002425"
+FT                   /db_xref="InterPro:IPR020904"
+FT                   /db_xref="InterPro:IPR036291"
+FT                   /db_xref="UniProtKB/TrEMBL:B2KN47"
+FT                   /protein_id="ABU44510.1"
+FT                   /translation="KSGPKNLVILDRIENPAAIAELKAINPKVTVTFYPYDVTVSVAET
+FT                   TKLLKTIFDKLKTVDLLINGAGILDDYQIERTIAVNFAGTVNTTTAIMAFWDKRKGGPG
+FT                   GVIANICSVTGFNSIYQVPVYSASKAAALSFTNSLAKLAPITGVIAYSINPGITKTTLV
+FT                   HKF"
+XX
+SQ   Sequence 500 BP; 123 A; 154 C; 118 G; 105 T; 0 other;
+     caagagtggc ccaaagaacc tggtgatcct tgatcgaatt gagaacccag cagctattgc        60
+     cgagctgaag gccatcaatc caaaggtgac cgtcacgttc tatccctacg atgtgaccgt       120
+     ttcagtggca gaaaccacaa agctgctgaa gacaatcttc gacaagctga agactgtgga       180
+     tctgctcatc aatggcgccg gcatcctgga cgactaccag atcgagcgca ccattgcggt       240
+     caacttcgcg ggcacagtga acaccaccac cgccatcatg gcgttctggg acaagcgcaa       300
+     gggcggccca ggtggtgtca ttgctaacat ctgctcggtg actggcttca attccatcta       360
+     ccaggtgccc gtttactccg cctccaaggc ggctgctctc agcttcacca attctctggc       420
+     gaaactggca cccattaccg gcgtaattgc ctattccatc aaccccggca tcacgaagac       480
+     aactcttgtc cacaagttca                                                   500
+//
+ID   ABG56046; SV 1; linear; genomic DNA; STD; INV; 711 BP.
+XX
+PA   DQ471649.1
+XX
+DT   20-JUL-2006 (Rel. 88, Created)
+DT   20-JUL-2006 (Rel. 88, Last updated, Version 1)
+XX
+DE   Drosophila karakasa partial alcohol dehydrogenase
+XX
+KW   .
+XX
+OS   Drosophila karakasa
+OC   Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Hexapoda; Insecta; Pterygota;
+OC   Neoptera; Holometabola; Diptera; Brachycera; Muscomorpha; Ephydroidea;
+OC   Drosophilidae; Drosophila.
+XX
+RN   [1]
+RP   1-711
+RX   DOI; 10.1016/j.ympev.2006.03.026.
+RX   PUBMED; 16678448.
+RA   Wang B.C., Park J., Watabe H.A., Gao J.J., Xiangyu J.G., Aotsuka T.,
+RA   Chen H.W., Zhang Y.P.;
+RT   "Molecular phylogeny of the Drosophila virilis section (Diptera:
+RT   Drosophilidae) based on mitochondrial and nuclear sequences";
+RL   Mol. Phylogenet. Evol. 40(2):484-500(2006).
+XX
+RN   [2]
+RP   1-711
+RA   Wang B.-C., Park J., Watabe H.-A., Gao J.-J., Aotsuka T., Chen H.-W.,
+RA   Zhang Y.-P.;
+RT   ;
+RL   Submitted (29-MAR-2006) to the INSDC.
+RL   Lab of Cellular and Molecular Evolution, Kunming Institute of Zoology, 32
+RL   Jiaochang Donglu, Kunming, Yunnan 650223, China
+XX
+DR   MD5; bc66f865bd5f59d5d18e71205d2a0ca7.
+XX
+FH   Key             Location/Qualifiers
+FH
+FT   source          1..711
+FT                   /organism="Drosophila karakasa"
+FT                   /strain="249"
+FT                   /mol_type="genomic DNA"
+FT                   /db_xref="taxon:381466"
+FT   CDS             DQ471649.1:<1..>711
+FT                   /codon_start=1
+FT                   /gene="Adh"
+FT                   /product="alcohol dehydrogenase"
+FT                   /db_xref="GOA:Q0QAP0"
+FT                   /db_xref="InterPro:IPR002347"
+FT                   /db_xref="InterPro:IPR002425"
+FT                   /db_xref="InterPro:IPR020904"
+FT                   /db_xref="InterPro:IPR036291"
+FT                   /db_xref="UniProtKB/TrEMBL:Q0QAP0"
+FT                   /protein_id="ABG56046.1"
+FT                   /translation="AGLGGIGLDSSREIVKKAPKNLVILDRIENPVAIAELKAINPKVN
+FT                   VTFYPYDVTLSVADTTKLLKIIFAKLSTVDLLINGAGILDDYQIERTIAVNFAGTVNTT
+FT                   TAIMEFWDKRKGGRGGVIANICSVTGFNAIYQVPVYSASKAAALSFTNSLAKLAHITGV
+FT                   TAYSINPGITKTTLVHNFNSWLDVEPRVAELLLEHPTQTTQQCAQSFVKAIEANKNGAI
+FT                   WMLDLGRLDPIEWTK"
+XX
+SQ   Sequence 711 BP; 175 A; 186 C; 185 G; 165 T; 0 other;
+     gctggtctgg gtggtattgg actggacagc agtcgcgaga ttgtcaagaa ggctcccaag        60
+     aacctggtga tcctcgatcg catcgagaat ccggttgcaa tagcggagtt gaaggcaatc       120
+     aatcccaagg tgaacgttac cttttatccc tatgatgtca ccttgtcggt ggcggacact       180
+     accaagcttc tgaagattat ctttgctaag ctcagcactg tggatctgct gatcaatggg       240
+     gctggaattc tggacgatta tcaaattgaa cggacaattg ctgttaattt tgcgggaacg       300
+     gtaaatacca caacagccat catggagttc tgggataagc gcaagggcgg ccgtggcggt       360
+     gtcattgcca acatttgctc ggtgaccggc tttaacgcca tctaccaggt gccagtatac       420
+     tccgcctcca aggcggctgc tctcagtttc accaactcgc tggcaaaact ggcacacatc       480
+     accggcgtaa cagcctactc catcaatccc ggcatcacga agacgacact tgtgcacaat       540
+     tttaactcgt ggctggatgt tgagccacgc gtggccgagc tgcttctaga gcacccgact       600
+     caaacgaccc aacagtgtgc ccagagcttt gtcaaagcca ttgaggccaa caagaatggc       660
+     gccatttgga tgcttgattt aggccggctg gatcccatcg aatggaccaa g                711
+//
+ID   AAO06902; SV 1; linear; genomic DNA; STD; INV; 765 BP.
+XX
+PA   AY156524.1
+XX
+DT   03-MAR-2003 (Rel. 75, Created)
+DT   16-APR-2005 (Rel. 83, Last updated, Version 2)
+XX
+DE   Drosophila navojoa alcohol dehydrogenase 1
+XX
+KW   .
+XX
+OS   Drosophila navojoa
+OC   Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Hexapoda; Insecta; Pterygota;
+OC   Neoptera; Holometabola; Diptera; Brachycera; Muscomorpha; Ephydroidea;
+OC   Drosophilidae; Drosophila.
+XX
+RN   [1]
+RP   1-879
+RX   PUBMED; 12586706.
+RA   Matzkin L.M., Eanes W.F.;
+RT   "Sequence variation of alcohol dehydrogenase (Adh) paralogs in cactophilic
+RT   Drosophila";
+RL   Genetics 163(1):181-194(2003).
+XX
+RN   [2]
+RP   1-879
+RA   Matzkin L.M., Eanes W.F.;
+RT   ;
+RL   Submitted (27-SEP-2002) to the INSDC.
+RL   Ecology and Evolution, State University of New York at Stony Brook, Stony
+RL   Brook, NY 11794-5245, USA
+XX
+DR   MD5; 96badc90996f65bf537c8d593bd44e8c.
+XX
+FH   Key             Location/Qualifiers
+FH
+FT   source          1..765
+FT                   /organism="Drosophila navojoa"
+FT                   /strain="Tucson stock center #15081-1374.0"
+FT                   /mol_type="genomic DNA"
+FT                   /db_xref="taxon:7232"
+FT   CDS             join(AY156524.1:1..93,AY156524.1:148..552,
+FT                   AY156524.1:613..879)
+FT                   /codon_start=1
+FT                   /gene="adh-1"
+FT                   /product="alcohol dehydrogenase 1"
+FT                   /db_xref="GOA:Q86LV6"
+FT                   /db_xref="InterPro:IPR002347"
+FT                   /db_xref="InterPro:IPR002425"
+FT                   /db_xref="InterPro:IPR020904"
+FT                   /db_xref="InterPro:IPR036291"
+FT                   /db_xref="UniProtKB/TrEMBL:Q86LV6"
+FT                   /protein_id="AAO06902.1"
+FT                   /translation="MAIANKNIIFVAGLGGIGFDTSREIVKSGPKNLVILDRIDNPAAI
+FT                   AELKALNPKVTVTFYPYDVTVPVAETTKLLKTIFDKLKTVDLLINGAGILDDYQIERTI
+FT                   AVNFTGTVNTTTAIMAFWDKRKGGPGGVIANICSVTGFNAIYQVPVYSASKAAALSFTN
+FT                   SLAKLAPITGVTAYSINPGITKTTLVHKFNSWLDVEPRVAELLLEHPTQTSLECAQNFV
+FT                   KAIEANQNGAIWKLDLGTLEAIEWTKHWDSHI"
+XX
+SQ   Sequence 765 BP; 188 A; 226 C; 191 G; 160 T; 0 other;
+     atggccatcg ctaacaagaa catcatcttc gttgctggac tcggtggcat tggattcgac        60
+     accagtcgcg agattgtcaa gagcggacca aagaacctgg taatccttga ccgcattgac       120
+     aacccagctg ccattgccga gctgaaggca ctcaacccca aggtgaccgt caccttctat       180
+     ccctatgatg tgaccgtccc ggttgcagag accacaaagc ttttgaagac aatcttcgac       240
+     aagctgaaga cagtcgacct gctcatcaat ggagctggca tcctggacga ctaccagatt       300
+     gagcgtacca ttgcagtgaa cttcacaggc acagtgaaca ccaccacggc catcatggcc       360
+     ttctgggaca agcgcaaggg cggcccaggc ggtgtcattg cgaacatctg ctcggtgact       420
+     ggcttcaatg ccatctacca ggtgcccgtg tactccgcat ccaaggcagc tgctctcagc       480
+     ttcaccaatt ccctggccaa actggcgccc attaccggcg tgactgccta ctccatcaac       540
+     cctggcatca cgaagacaac cctcgtccac aagttcaact cgtggctgga tgtggagcct       600
+     cgtgtggccg agttgctgct ggagcatccc acgcagacaa gtttggagtg tgcccagaac       660
+     tttgtcaagg ctattgaagc caaccagaat ggcgccatct ggaaactgga cttgggtact       720
+     ctggaagcca ttgaatggac caagcactgg gattcgcata tctaa                       765
+//

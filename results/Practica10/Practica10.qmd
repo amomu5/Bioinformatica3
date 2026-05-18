@@ -1,0 +1,147 @@
+---
+title: "Practica10"
+format: html
+engine: knitr
+---
+```{bash
+echo "uname    : $(uname -a)"
+echo "shell    : $BASH"
+echo "version  : $BASH_VERSION"
+ls /mnt/c >/dev/null 2>&1 && echo "→ Soy WSL (las rutas válidas empiezan por /mnt/c/...)"
+ls /c     >/dev/null 2>&1 && echo "→ Soy Git Bash (las rutas válidas empiezan por /c/...)"
+```
+Se han guardado los datos en Bioinformatica/data/Practica10/
+
+
+
+Se han guardado los datos en `Bioinformatica/data/Practica10/`.
+
+# Ejercicio 1
+
+
+Con ayuda de Gemini:
+No he podido hacer que funcione al renderizar este primer bloque. De manera independiente funciona, pero al renderizar el archivo me sale error y no he sabido (Ni gemini) identificar la posible razon.
+
+```{bash}
+# Desactivar errexit/pipefail si Quarto los hubiera puesto
+set +e +o pipefail 2>/dev/null
+
+FILE=/mnt/c/Documents/Bioinformatica/data/Practica10/At4.10.fa.gz
+
+# 1) Número de secuencias
+N=$(zcat "$FILE" | grep -c '^>')
+echo "Número de secuencias: $N"
+
+# 2) Longitudes y total de bases
+zcat "$FILE" | awk '
+  /^>/ { if (seq != "") { print length(seq); seq = "" } next }
+  { seq = seq $0 }
+  END { if (seq != "") print length(seq) }
+' | awk '
+  BEGIN { min = -1; max = 0; sum = 0 }
+  {
+    L = $1
+    if (min < 0 || L < min) min = L
+    if (L > max) max = L
+    sum += L
+  }
+  END {
+    printf "Mínima: %d\nMáxima: %d\nMedia : %.2f\nTotal : %d\nCobertura (19 Mb): %.2fx\n",
+           min, max, sum/NR, sum, sum/19000000
+  }
+'
+
+# Forzar que el chunk termine con exit code 0
+true
+```
+
+**Resultado:** 13 812 secuencias con una longitud mínima de **2 942 pb**, máxima de 59 075 pb y media de 18 143,61 pb. Total ≈ 250,6 Mb. Cobertura esperada para un genoma de 19 Mb: **≈ 13,19×**.
+
+## Ensamblaje con hifiasm
+
+> El siguiente chunk **no se ejecuta al renderizar** (`eval: false`), porque el ensamblaje ya se hizo previamente y tarda varios minutos. Se muestra solo a modo de documentación del comando que se utilizó.
+
+```{bash}
+#| eval: false
+if [ ! -e /mnt/c/Documents/Bioinformatica/results/Practica10/asm1/At4.bp.p_ctg.gfa ]; then
+   $HOME/bin/hifiasm/hifiasm \
+       -o /mnt/c/Documents/Bioinformatica/results/Practica10/asm1/At4 \
+       -t 2 -f 0 \
+       /mnt/c/Documents/Bioinformatica/data/Practica10/At4.10.fa.gz \
+       2> /mnt/c/Documents/Bioinformatica/results/Practica10/asm1/hifiasm.log
+fi
+```
+
+# Ejercicio 2
+
+Consulta la ayuda de `hifiasm` (`hifiasm -h`) y contesta las preguntas siguientes:
+
+**¿Los parámetros corresponden al ensamblaje de un genoma haploide o diploide?**
+
+Diploide. Por defecto, hifiasm asume que la muestra es diploide y produce un ensamblaje primario más dos conjuntos de contigs separados por haplotipo (`*.bp.hap1.p_ctg.gfa` y `*.bp.hap2.p_ctg.gfa`), precisamente lo que estamos viendo entre los muchos archivos que se han generado. Si quisiéramos forzar el modo haploide habría que añadir `-l0` (desactivar el purgado de duplicaciones, paso pensado para resolver heterocigosidad).
+
+**¿Qué nivel de eliminación de duplicaciones hemos aplicado?**
+
+El nivel de `purge_dups` se controla con `-l`. Como no hemos puesto `-l`, hifiasm aplica el valor por defecto **`-l3`**, es decir, purga muy fuerte: elimina tanto los haplotigs contenidos como los que se superponen, para evitar que regiones muy heterocigóticas aparezcan duplicadas como contigs distintos en el ensamblaje.
+
+**Si tuviéramos lecturas ultra-largas, ¿con qué opción o argumento añadiríamos esa información?**
+
+Con la opción `--ul`, seguida de uno o varios ficheros FASTA/FASTQ:
+
+```bash
+hifiasm -o asm1/At4 -t 2 -f 0 \
+        --ul At4_ONT.fq.gz \
+        At4.10.fa.gz
+```
+
+# Ejercicio 3
+
+Consulta la descripción de los archivos de salida y contesta las preguntas siguientes.
+
+**¿Dónde están las secuencias que componen el ensamblaje?**
+
+Las secuencias se encuentran en los archivos con extensión `.gfa` dentro de la carpeta de salida (por ejemplo, en `At4.bp.p_ctg.gfa`). Al ser un formato de grafo, los fragmentos de ADN reales están guardados específicamente en las líneas que empiezan por la letra **S** (Segments), junto a su nombre y su secuencia de nucleótidos. Por eso, para extraerlas como FASTA usamos:
+
+```{bash}
+#| eval: false
+awk '(/^S/){print ">" $2 "\n" $3}' \
+    /mnt/c/Documents/Bioinformatica/results/Practica10/asm1/At4.bp.p_ctg.gfa \
+    > /mnt/c/Documents/Bioinformatica/results/Practica10/asm1/At4.fa
+```
+
+**En los archivos `.gfa`, ¿qué son las líneas que empiezan por ‘A’?**
+
+Son una extensión propia de hifiasm sobre el formato GFA. Cada línea `A` describe **una lectura HiFi que forma parte de ese unitig/contig**, indicando dónde se coloca y a qué haplotipo se ha asignado (`HG:A:a|p|m` → ambiguo, paterno o materno). En conjunto, las líneas `A` permiten saber qué lecturas se han usado para construir cada contig.
+
+```{bash}
+#| eval: false
+grep "^A" /mnt/c/Documents/Bioinformatica/results/Practica10/asm1/At4.bp.p_ctg.gfa | head -n 5
+```
+
+**¿Qué información tienen los archivos `.bed`?**
+
+Los ficheros tipo `*.lowQ.bed` (uno por cada ensamblaje: primario, hap1, hap2…) contienen intervalos en coordenadas de contig (`nombre_contig  inicio  fin`) que marcan **regiones de baja calidad o potencialmente problemáticas**: zonas donde los haplotipos no son consistentes o donde la cobertura/los solapamientos sugieren un posible error de ensamblaje.
+
+**Cobertura media estimada de las secuencias homocigotas y heterocigotas**
+
+Se obtienen del propio log de hifiasm:
+
+```{bash}
+#| eval: false
+grep -E "peak_hom|peak_het|homozygous|heterozygous" \
+     /mnt/c/Documents/Bioinformatica/results/Practica10/asm1/hifiasm.log
+```
+
+En nuestra corrida, el log indica:
+
+```
+[M::ha_ft_gen] peak_hom: 12; peak_het: -1
+[M::purge_dups] homozygous read coverage threshold: 12
+```
+
+- **Cobertura media estimada de las secuencias homocigotas: ≈ 12×** (concuerda con el ~13× calculado en el Ejercicio 1).
+- **Cobertura media estimada de las secuencias heterocigotas: no se ha podido estimar (`peak_het: -1`)**, porque *Arabidopsis thaliana* es autógama y prácticamente homocigota, y la cobertura total (~12×) es además demasiado baja como para resolver un eventual pico heterocigoto en el histograma de *k*-mers.
+
+
+
+

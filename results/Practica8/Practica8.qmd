@@ -1,0 +1,441 @@
+---
+title: "Practica 8: Principio de BLAST"
+lang: es
+date: today
+execute: 
+  eval: true
+  error: true
+engine: knitr
+language:
+   title-block-published: "Última actualización:"
+format: html
+
+---
+
+# Preparación
+Necesitamos tener instalado el paquete `ncbi-blast+`, que en Linux y en WSL2 se puede instalar mediante `sudo apt install ncbi-blast+`. Este método no instalará la versión más reciente, pero será suficiente. También podemos seguir las instrucciones de instalación en:https://www.ncbi.nlm.nih.gov/books/NBK569861/.
+
+En el ejercicio 3 necesitaremos también los programas `datasets` y `dataformat`, que podéis descargar desde este enlace: https://www.ncbi.nlm.nih.gov/datasets/docs/v2/command-line-tools/download-and-install/. (los instalamos ya en la práctica 4)
+
+Es recomendable guardar los ejecutables en una carpeta del PATH, yo personalmente los guardo en /usr/local/bin/. Además, usaremos el paquete de R Biostrings, que en caso de no tener instalado, podéis instalar con BiocManager (no con install.packages()!):
+
+```{r}
+#| eval: false
+BiocManager::install('Biostrings')
+```
+
+:::{.callout-note icon=false}
+## Aclaración
+Como estamos trabajando con 
+
+:::
+
+# Objetivos
+BLAST ejecuta alineamientos locales entre una secuencia “problema” o query, generalmente no muy larga, y un conjunto grande de secuencias (la base de datos) entre las que esperamos encontrar alguna secuencia homóloga a la query. Cada secuencia de la base de datos que pueda alinearse con la query se la llama subject en el alineamiento. Los objetivos de esta práctica son:
+
+1. Identificar proteínas ortólogas entre dos especies con BLASTP.
+2. Realizar un PSI-BLAST contra la base de datos Swissprot.
+3. Determinar el origen de las lecturas que no pudieron ser mapeadas a su genoma de referencia, usando BLASTN remoto.
+
+# Datos
+## Datos del primer ejercicio
+En el primer ejercicio, usaremos los proteomas de dos especies bacterianas endosimbiontes, con genomas reducidos (para facilitar las búsquedas): *Buchnera aphidicola* (107806) y *Blochmannia ocreatus* (251538). Los proteomas se pueden descargar desde uniprot (pones el ID, entras en la Entry ¡NO DESCARGAS!, y descargas el gene count). Los descargamos comprimidos en la carpeta de data.
+
+Te dan el archivo comprimido, pero hay que descomprimirlo (o lo podemos leer comprimido también, pero es más incómodo). Para descomprimirlo, usamos:
+
+```{bash,eval=FALSE}
+
+
+cd "$(p=$(pwd); while [ ! -f "$p"/*.Rproj ] && [ "$p" != "/" ]; do p=$(dirname "$p"); done; echo "$p")"
+
+if [ ! -e ~/Bioinformatica/data/Practica8/buchnera.fa ]; then
+gunzip -c ~/Bioinformatica/data/Practica8/UP000001806_107806.fasta.gz > ~/Bioinformatica/data/Practica8/buchnera.fa
+fi
+if [ ! -e ~/Bioinformatica/data/Practica8/blochmannia.fa ]; then
+gunzip -c ~/Bioinformatica/data/Practica8/UP001056834_251538.fasta.gz > ~/Bioinformatica/data/Practica8/blochmannia.fa
+fi
+```
+
+## Datos del segundo ejercicio
+Para el segundo ejercicio, necesitamos descargar la base de datos de Swissprot para BLAST. Podemos hacerlo de dos maneras. En cualquier caso, los archivos descargados y descomprimidos deben guardarse en la carpeta `data`. Por tanto, los comandos siguientes deberan de ejecutarse desde esa carpeta. Lo hacemos siguiendo el siguiente comando:
+
+```{bash,eval=FALSE}
+cd "$(p=$(pwd); while [ ! -f "$p"/*.Rproj ] && [ "$p" != "/" ]; do p=$(dirname "$p"); done; echo "$p")"
+
+if [ ! -e /mnt/c/Documents/Bioinformatica/data/Practica8/swissprot.tar.gz ]; then
+(cd /mnt/c/Documents/Bioinformatica/data/Practica8 && update_blastdb --decompress swissprot)
+fi
+```
+
+## Datos del tercer ejercicio
+Pinchando aquí (https://aulavirtual.uv.es/pluginfile.php/5994243/mod_resource/content/3/contaminacion.fa.gz) podéis descargar el archivo comprimido contaminacion.fa.gz. No lo abráis ni lo descomprimáis. Sólo guardadlo en la carpeta de datos tal como está. En adelante supondré que podéis acceder al archivo mediante `./data/Practica_08` desde la carpeta general. 
+
+
+# Ejercicio 1 — Ortólogos recíprocos *Buchnera* vs *Blochmannia*
+
+## 1.1 Enmascarar e indexar el proteoma de *Buchnera*
+
+```{bash,eval=FALSE}
+set +e
+DATA=/mnt/c/Documents/Bioinformatica/data/Practica8
+RES=/mnt/c/Documents/Bioinformatica/results/Practica8
+
+if [ ! -e "$RES/buchnera.phr" ]; then
+   # Creamos un archivo para enmascarar zonas de baja complejidad:
+   if [ ! -e "$RES/buchnera_seg.asnb" ]; then
+      segmasker -in "$DATA/buchnera.fasta" \
+                -infmt fasta \
+                -parse_seqids \
+                -outfmt maskinfo_asn1_bin \
+                -out "$RES/buchnera_seg.asnb"
+   fi
+   # Y indexamos el archivo FASTA para BLAST:
+   makeblastdb  -in "$DATA/buchnera.fasta" \
+                -input_type fasta \
+                -dbtype prot \
+                -parse_seqids \
+                -mask_data "$RES/buchnera_seg.asnb" \
+                -out "$RES/buchnera" \
+                -title "Proteoma de Buchnera"
+fi
+true
+```
+
+## 1.2 Enmascarar e indexar el proteoma de *Blochmannia*
+
+```{bash,eval=FALSE}
+set +e
+DATA=/mnt/c/Documents/Bioinformatica/data/Practica8
+RES=/mnt/c/Documents/Bioinformatica/results/Practica8
+
+if [ ! -e "$RES/blochmannia.phr" ]; then
+   if [ ! -e "$RES/blochmannia_seg.asnb" ]; then
+      segmasker -in "$DATA/blochmannia.fasta" \
+                -infmt fasta \
+                -parse_seqids \
+                -outfmt maskinfo_asn1_bin \
+                -out "$RES/blochmannia_seg.asnb"
+   fi
+   makeblastdb  -in "$DATA/blochmannia.fasta" \
+                -input_type fasta \
+                -dbtype prot \
+                -parse_seqids \
+                -mask_data "$RES/blochmannia_seg.asnb" \
+                -out "$RES/blochmannia" \
+                -title "Proteoma de Blochmannia"
+fi
+
+```
+
+## 1.3 BLASTP de *Buchnera aphidicola* hacia *Blochmannia ocreatus*
+
+```{bash,eval=FALSE}
+set +e
+DATA=/mnt/c/Documents/Bioinformatica/data/Practica8
+RES=/mnt/c/Documents/Bioinformatica/results/Practica8
+
+if [ ! -e "$RES/buc2blo.txt" ]; then
+   blastp -query "$DATA/buchnera.fasta" \
+          -db    "$RES/blochmannia" \
+          -out   "$RES/buc2blo.txt" \
+          -outfmt '6 qseqid sseqid qlen slen length evalue bitscore' \
+          -evalue 0.001 \
+          -max_target_seqs 1
+fi
+echo "Hits buc → blo : $(wc -l < "$RES/buc2blo.txt")"
+true
+```
+
+## 1.4 BLASTP de *Blochmannia ocreatus* hacia *Buchnera aphidicola*
+
+```{bash}
+set +e
+DATA=/mnt/c/Documents/Bioinformatica/data/Practica8
+RES=/mnt/c/Documents/Bioinformatica/results/Practica8
+
+if [ ! -e "$RES/blo2buc.txt" ]; then
+   blastp -query "$DATA/blochmannia.fasta" \
+          -db    "$RES/buchnera" \
+          -out   "$RES/blo2buc.txt" \
+          -outfmt '6 qseqid sseqid qlen slen length evalue bitscore' \
+          -evalue 0.001 \
+          -max_target_seqs 1
+fi
+echo "Hits blo → buc : $(wc -l < "$RES/blo2buc.txt")"
+true
+```
+
+## 1.5 Comparación de resultados en R
+
+```{r}
+RES <- "~/Bioinformatica/results/Practica8"
+
+buc2blo <- read.table(
+   file.path(RES, "buc2blo.txt"),
+   col.names = c('query', 'subject', 'qlen', 'slen',
+                 'length', 'evalue', 'bitscore')
+)
+blo2buc <- read.table(
+   file.path(RES, "blo2buc.txt"),
+   col.names = c('query', 'subject', 'qlen', 'slen',
+                 'length', 'evalue', 'bitscore')
+)
+
+head(buc2blo)
+head(blo2buc)
+```
+
+## 1.6 Identificación de los recíprocos (solución del profesor)
+
+```{r}
+buc2blo$reverse <- blo2buc[
+   match(buc2blo$subject, blo2buc$query),
+   'subject'
+]
+coincidencias <- buc2blo[
+   buc2blo$query == buc2blo$reverse,
+   c('query', 'subject')
+]
+
+cat("Pares de ortólogos recíprocos:", nrow(coincidencias), "\n")
+head(coincidencias)
+```
+
+## 1.7 Visualización (longitudes de las parejas ortólogas)
+
+Para ganar confianza en que los resultados tienen sentido, comparamos las longitudes de cada pareja: si son ortólogas, deberían parecerse y caer cerca de la diagonal.
+
+```{r}
+ortos <- merge(coincidencias, buc2blo, by = c("query", "subject"))
+plot(ortos$qlen, ortos$slen,
+     pch = 20, cex = 0.6, col = "steelblue",
+     xlab = "Longitud proteína Buchnera (aa)",
+     ylab = "Longitud proteína Blochmannia (aa)",
+     main = paste("Longitudes de", nrow(ortos), "pares de ortólogos"))
+abline(0, 1, col = "red", lty = 2)
+```
+**Echa un vistazo a estas tablas de resultados. ¿Sabrías identificar las parejas de proteínas que son recíprocamente la que más se parece una a la otra??**
+
+Sí, se identifican cruzando las dos tablas de resultados. Para cada proteína de Buchnera (query), se observa cuál fue
+su mejorcoincidencia en Blochmannia . Luego, se comprueba si esa misma proteína de Blochmannia, al usarla como query en la búsqueda inversa, devuelve la proteína original de Buchnera como su subject de mayor puntuación. En R, esto se confirma cuando la columna original coincide con la invertida.
+
+
+**¿Qué datos te gustaría representar gráficamente para ganar confianza en que los resultados son correctos y tienen sentido?**
+La opción más útil es representar gráficamente las longitudes de las parejas seleccionadas (qlen vs slen). Al ser proteínas ortólogas, deberían tener un tamaño casi idéntico, por lo que los puntos deben caer muy cerca de la línea diagonal.
+
+# Ejercicio 2 — PSI-BLAST
+
+## 2.1 Extracción de la secuencia query desde Swissprot
+
+```{bash,eval=FALSE}
+set +e
+DATA=/mnt/c/Documents/Bioinformatica/data/Practica8
+RES=/mnt/c/Documents/Bioinformatica/results/Practica8
+
+# Como Swissprot debería estar ya descargada en data/, podemos sacar
+# de ahí la secuencia de la proteína escogida:
+if [ ! -e "$RES/P39615.fa" ]; then
+   blastdbcmd -db "$DATA/swissprot" -entry P39615 -out "$RES/P39615.fa"
+fi
+cat "$RES/P39615.fa"
+true
+```
+
+## 2.2 PSI-BLAST iterativo
+
+```{bash,eval=FALSE}
+set +e
+DATA=/mnt/c/Documents/Bioinformatica/data/Practica8
+RES=/mnt/c/Documents/Bioinformatica/results/Practica8
+
+# Y ahora la usamos como query en psi-blast:
+if [ ! -e "$RES/P39615.blastout.txt" ]; then
+   psiblast -db "$DATA/swissprot" \
+            -query "$RES/P39615.fa" \
+            -out   "$RES/P39615.blastout.txt" \
+            -evalue 0.1 \
+            -outfmt 7 \
+            -inclusion_ethresh 0.001 \
+            -num_iterations 7 \
+            -matrix BLOSUM62
+fi
+echo "Iteraciones realizadas: $(grep -c 'Iteration' "$RES/P39615.blastout.txt")"
+true
+```
+
+## 2.3 ¿Hemos rescatado al resto de la superfamilia?
+
+```{bash,eval=FALSE}
+RES=/mnt/c/Documents/Bioinformatica/results/Practica8
+
+for p in Q9CC91 P39615 B1AJI8 P47343 Q5UPT2 Q6UDG6 A1AFY9 O59825 P30314; do
+    if grep -q -w "$p" "$RES/P39615.blastout.txt"; then
+        echo "✓ $p  encontrado"
+    else
+        echo "✗ $p  NO encontrado"
+    fi
+done
+true
+```
+
+**Consulta la ayuda de psiblast y asegúrate de entender para qué sirven los argumentos que hemos usado. Por ejemplo, ¿cuál es la diferencia entre -evalue y -inclusion_ethresh?¿Cómo harías que la búsqueda fuera más sensible todavía?**
+
+Diferencia entre `-evalue` y `-inclusion_ethresh`
+
+- **`-evalue 0.1`** es el umbral *para mostrar* un hit en la salida. Bastante permisivo, para no perder candidatos.
+- **`-inclusion_ethresh 0.001`** es el umbral *para incluir* un hit en la matriz PSSM de la siguiente iteración. Es mucho más estricto, porque un falso positivo aquí contamina las iteraciones posteriores.
+
+Para hacer la búsqueda más sensible
+
+- Aumentar `-num_iterations` (10 o 15).
+- Cambiar a una matriz más sensible: `-matrix BLOSUM45`.
+- Aflojar `-inclusion_ethresh`  (cuidao *profile drift*).
+
+# Ejercicio 3 — Origen de la contaminación en lecturas de *Aphis aurantii*
+
+## 3.1 Selección aleatoria de 20 secuencias
+
+```{r}
+suppressPackageStartupMessages(library('Biostrings'))
+
+DATA <- "~/Bioinformatica/data/Practica8"
+RES  <- "~/Bioinformatica/results/Practica8"
+
+unmapped <- readDNAStringSet(file.path(DATA, "contaminacion.fa.gz"))
+n <- length(unmapped)
+cat("Total de lecturas no mapeadas:", n, "\n")
+
+set.seed(42)   # quítalo si quieres una muestra distinta cada vez
+muestra <- unmapped[sample(1:n, 20)]
+writeXStringSet(muestra, file.path(RES, "muestra.fa"))
+head(names(muestra))
+```
+
+## 3.2 BLASTN remoto contra `nr`
+
+
+
+```{bash,eval=FALSE}
+set +e
+RES=/mnt/c/Documents/Bioinformatica/results/Practica8
+cd "$RES"
+
+if [ ! -e resultado.txt ]; then
+   blastn -query muestra.fa \
+          -db nr \
+          -out resultado.txt \
+          -outfmt '6 qaccver saccver length qlen qstart qend evalue bitscore staxid' \
+          -max_target_seqs 1 \
+          -evalue 0.001 \
+          -remote 2> /dev/null
+fi
+
+echo "Hits obtenidos: $(wc -l < resultado.txt)"
+head resultado.txt
+true
+```
+
+## 3.3 Identificación taxonómica con `datasets` y `dataformat`
+
+```{bash,eval=FALSE}
+set +e
+RES=/mnt/c/Documents/Bioinformatica/results/Practica8
+cd "$RES"
+
+# Extraemos los identificadores taxonómicos (columna 9) de "resultado.txt":
+cut -f 9 resultado.txt | sort | uniq | paste -sd ',' > taxids.txt
+cat taxids.txt
+
+# Generamos una tabla con información taxonómica de esos identificadores:
+if [ ! -e taxreport.txt ]; then
+   datasets summary taxonomy taxon $(cat taxids.txt) --as-json-lines | \
+   dataformat tsv taxonomy --template tax-summary > taxreport.txt
+fi
+head taxreport.txt
+true
+```
+
+## 3.4 Análisis en R: hemípteros vs el resto
+
+```{r}
+RES <- "~/Bioinformatica/results/Practica8"
+
+# Resultados del BLAST
+blast <- read.table(file.path(RES, "resultado.txt"),
+   col.names = c("qaccver", "saccver", "length", "qlen",
+                 "qstart", "qend", "evalue", "bitscore", "taxid"),
+   sep = "\t", quote = "", stringsAsFactors = FALSE)
+
+# Informe taxonómico
+tax <- read.table(file.path(RES, "taxreport.txt"),
+                  header = TRUE, sep = "\t",
+                  quote = "", stringsAsFactors = FALSE)
+
+# Mostramos qué columnas tiene tax para que se vea en el render
+cat("Columnas de tax:\n"); print(names(tax))
+
+# === Detección automática de la columna del taxid ===
+# La primera columna que contenga solo números enteros es, casi seguro, el taxid
+es_taxid <- sapply(tax, function(x) all(grepl("^[0-9]+$", trimws(as.character(x)))))
+col_tax  <- names(tax)[which(es_taxid)[1]]
+cat("\nColumna del taxid detectada:", col_tax, "\n")
+
+# Forzamos tipos compatibles
+tax[[col_tax]] <- as.integer(tax[[col_tax]])
+blast$taxid    <- as.integer(blast$taxid)
+
+# Merge
+res <- merge(blast, tax,
+             by.x = "taxid",
+             by.y = col_tax,
+             all.x = TRUE)
+
+cat("\nFilas tras el merge:", nrow(res), "\n")
+head(res)
+
+# === Análisis hemípteros / plantas / resumen ===
+col_orden <- grep("order",   names(res), value = TRUE, ignore.case = TRUE)[1]
+col_reino <- grep("kingdom|superkingdom", names(res),
+                  value = TRUE, ignore.case = TRUE)[1]
+col_nombre <- grep("organism.*name|scientific.*name|species",
+                   names(res), value = TRUE, ignore.case = TRUE)[1]
+
+cat("\nUsando columnas:\n")
+cat("  Reino  →", col_reino,  "\n")
+cat("  Orden  →", col_orden,  "\n")
+cat("  Nombre →", col_nombre, "\n\n")
+
+# Fracción de hemípteros
+if (!is.na(col_orden)) {
+    es_hemiptero <- grepl("Hemiptera", res[[col_orden]], ignore.case = TRUE)
+    cat("Hemípteros:", sum(es_hemiptero, na.rm = TRUE), "/", nrow(res),
+        " (", round(100 * mean(es_hemiptero, na.rm = TRUE), 1), "%)\n")
+}
+
+# Fracción de plantas
+if (!is.na(col_reino)) {
+    es_planta <- grepl("Viridiplantae|Plantae",
+                       res[[col_reino]], ignore.case = TRUE)
+    cat("Plantas   :", sum(es_planta, na.rm = TRUE), "/", nrow(res), "\n")
+}
+
+# Tablas resumen
+if (!is.na(col_reino)) {
+    cat("\n--- Por reino ---\n"); print(table(res[[col_reino]], useNA = "ifany"))
+}
+if (!is.na(col_orden)) {
+    cat("\n--- Por orden ---\n"); print(table(res[[col_orden]], useNA = "ifany"))
+}
+if (!is.na(col_nombre)) {
+    cat("\n--- Organismos encontrados ---\n"); print(table(res[[col_nombre]]))
+}
+
+
+```
+**Puedes importar tanto los resultados del BLAST como el informe taxonómico a una sesión de R y determinar que fracción de las lecturas seleccionadas parecen proceder de un hemímptero y qué fracción proceden de otros organismos. Tienen sentido los resultados? Encuentras alguna secuencia de origen vegetal?**
+
+Si, tienen sentido.
+Hemípteros: Encontramos secuencias de hemípteros Aphis aurantii es un hemíptero. Estas lecturas aparecen como "contaminación".
+Plantas:Se encuentran secuencias de origen vegetal. Dado que este insecto (un pulgón) se alimenta de la savia de las plantas, al secuenciarlo el individuo entero contrenda DNA de plantas en el. 
+
+No se han encontrado secuencias de origen vegetal pero podria pasar.

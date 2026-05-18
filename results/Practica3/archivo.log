@@ -1,0 +1,4 @@
+--2026-05-18 18:22:19--  ftp://.../
+           => ‘.listing’
+Resolving ... (...)... failed: Name or service not known.
+wget: unable to resolve host address ‘...’

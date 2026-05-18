@@ -1,0 +1,308 @@
+---
+title: "Practica 9: Reconstrucción Filogenética"
+lang: es
+date: today
+execute:
+  eval: true
+  error: true
+engine: knitr
+language:
+   title-block-published: "Última actualización:"
+format:
+   html:
+      embed-resources: true
+---
+
+# Introducción
+Aunque existen muy buenos programas para inferir filogenias fuera del entorno de R (es decir, para el terminal de Bash), utilizar las herramientas en R tiene la ventaja de poder representar los árboles, manipularlos y extraer información de ellos con toda la flexibilidad que permite un lenguaje de programación. Otros programas como RAxML o IQtree producirían los resultados en forma de archivos de texto con formato Newick o NEXUS. En R, los árboles serán objetos de clase `phylo`, que pueden también ser exportados como archivos de texto con formato Newick con la función `write.tree()` del paquete `ape`. Este paquete será cargado automáticamente cuando carguemos el paquete phangorn, que proporciona las principales funciones para inferencia filogenética
+
+# Objetivos
+Obtener una filogenia calibrada de homininos y algunos primates, a partir de secuencias mitocondriales.
+
+# Datos
+Pinchando aquí: https://aulavirtual.uv.es/pluginfile.php/6009204/mod_resource/content/3/mtDNA.fasta; descargaréis un alineamiento en formato FASTA de 42 cromosomas mitocondriales completos de: un gorila, cuatro chimpancés, cuatro bonobos, un Homo heidelbergensis (de hace unos 400000 años), 4 humanos denisovanos (de hace entre 30000 y 110000 años), 19 humanos neandertales (de hace entre 30000 y 180000 años) y 9 humanos anatómicamente modernos (actuales). Encontréis también el archivo en el aula virtual, con el nombre mtDNA.fasta, por si el enlace no funciona. Antes de analizarlos, debemos instalar el paquete phangorn con el comando `install.packages("phangorn")` en nuestra consola de R.
+
+Guardamos el archivo mtDNA.fasta en la carpeta de datos. El siguiente bloque crea
+la carpeta si no existe e intenta descargar el alineamiento del aula virtual; si
+el enlace requiere autenticación, basta con que coloques manualmente el archivo
+en `../../data/Practica_09/mtDNA.fasta`.
+
+```{bash}
+DATA=/mnt/c/Documents/Bioinformatica/data/Practica9
+mkdir -p "$DATA"
+
+if [ ! -e "$DATA/mtDNA.fasta" ]; then
+   wget -o /dev/null -O "$DATA/mtDNA.fasta" \
+        https://aulavirtual.uv.es/pluginfile.php/6009204/mod_resource/content/3/mtDNA.fasta \
+   || echo "No se ha podido descargar; copia mtDNA.fasta manualmente en $DATA/"
+fi
+```
+
+Una vez disponible, lo analizamos con la librería phangorn. Como Quarto ejecuta
+cada bloque tomando como directorio de trabajo la carpeta del propio `.qmd`,
+basta con apuntar al archivo con una ruta relativa, sin necesidad de buscar la
+raíz del proyecto a mano:
+
+```{r}
+library(phangorn)
+
+DATA_R <- "~/Bioinformatica/data/Practica9"
+mtdna <- read.phyDat(file.path(DATA_R, 'mtDNA.fasta'), format = 'fasta')
+```
+
+Después de ejecutar el bloque anterior, habrás cargado los datos en el objeto de clase phyDat llamado mtdna. Puedes usar la consola de R para echarle un vistazo, por ejemplo con la función glance() o incluso para generar una imagen del alineamiento con image(). Si tienes instalado el paquete Biostrings (de Bioconductor), puedes crear un objeto de classe DNAStringSet con as.StringSet(mtDNA), al que se le pueden aplicar muchas otras funciones, pero no es lo que vamos a hacer ahora.
+
+:::{.callout-note icon=false}
+## Ejercicio 1
+¿Puedes confirmar el número de secuencias? ¿Qué longitud tiene el alineamiento? ¿Qué función usarías para extraer los nombres de las secuencias?
+
+```{r}
+length(mtdna)
+
+sum(attr(mtdna, "weight"))
+attr(mtdna, "nr")
+
+names(mtdna)
+```
+42 secuencias, con un alineamiento de 16603 donde 974 son distintos entre si. Los nombres se observan en el output.
+:::
+
+:::{.callout-note icon=false}
+## Solución 1
+
+1. El número de secuencias se obtiene aplicando `length()` directamente sobre
+   el objeto `phyDat`, que se comporta como una lista cuyos elementos son las
+   distintas secuencias del alineamiento:
+
+```{r}
+length(mtdna)
+```
+
+   Devuelve **42**, que coincide con la composición del FASTA descrito en el
+   enunciado (1 gorila + 4 chimpancés + 4 bonobos + 1 *H. heidelbergensis* +
+   4 denisovanos + 19 neandertales + 9 humanos modernos).
+
+2. La longitud del alineamiento merece un comentario: los objetos `phyDat`
+   no almacenan cada columna del alineamiento por separado, sino que agrupan
+   internamente todas las columnas con el mismo patrón de bases para ocupar
+   menos memoria. Por eso `ncol(mtdna)` o `nchar(mtdna)` no devuelven la
+   longitud "verdadera", sino el número de **patrones únicos**. Para recuperar
+   la longitud real del alineamiento hay que sumar los pesos (cuántas veces se
+   repite cada patrón) guardados como atributo:
+
+```{r}
+sum(attr(mtdna, "weight"))
+attr(mtdna, "nr")
+```
+
+   La primera línea informa de que el alineamiento original tiene **16603
+   posiciones**, mientras que la segunda indica que solo **974** son patrones
+   distintos, es decir, sitios donde al menos una secuencia difiere de las
+   demás. El resto de columnas son invariantes y no aportan señal filogenética.
+
+3. Para listar las etiquetas de las secuencias, la función estándar es
+   `names()`, que devuelve un vector de caracteres con los identificadores tal
+   y como vienen del FASTA:
+
+```{r}
+names(mtdna)
+```
+
+:::
+
+# Árboles basados en distancias
+Los árboles NJ y UPGMA pueden proporcionar una idea rápida de cómo podría ser la relación filogenética entre las secuencias. Como métodos basados en distancias que son, necesitamos calcular primero las distancias. Podemos hacerlo en el mismo paso en el que generamos el árbol: `nj(dist.ml(mtdna))`. O bien, podemos hacerlo en dos pasos: guardar la matriz de distancias en un objeto de clase dist, y después generar los árboles.
+
+La función `dist.ml()` (de phangorn) solo ofrece un par de modelos de evolución de nucleótidos para estimar distancias: F81 y JC69 (ofrece 17 modelos para proteínas). La función `dist.dna()` de ape (que no se aplica sobre objetos phyDat, sino DNAbin) ofrece algunas opciones más. Pero en el fondo, los métodos NJ y UPGMA son sólo heurísticos rápidos, con los que no hace falta usar distancias de alta precisión.
+
+```{r}
+distancias <- dist.ml(mtdna, model = 'F81')
+mt_nj    <- NJ(distancias)
+mt_upgma <- upgma(distancias)
+```
+
+:::{.callout-note icon=false}
+## Ejercicio 2
+1. De qué clase son los objetos mt_nj y mt_upgma?
+
+2. Consulta la estructura de estos objetos (str(mt_nj)).
+
+3. Represéntalos gráficamente (plot(mt_nj)) y consulta la ayuda de la función plot.phylo() para saber qué opciones de representación gráfica tienes.
+
+4. Para qué sirven las funciones add.scale.bar() and axisPhylo()?
+
+:::
+
+:::{.callout-note icon=false}
+## Solución 2
+
+1. Si llamamos a `class()` sobre ambos árboles veremos que comparten tipo:
+
+```{r}
+class(mt_nj)
+class(mt_upgma)
+```
+
+   En los dos casos R nos devuelve `"phylo"`. Cualquier función pensada para `phylo` (`plot.phylo`,
+   `root`, `write.tree`, etc.) se aplica indistintamente a un NJ o a un UPGMA.
+
+2. Al inspeccionar el contenido interno con `str()` aparecen los cuatro
+   componentes típicos de un objeto `phylo`: la matriz `edge`, qué nodos están conectados entre sí; el vector `edge.length` con la longitud de cada rama; `tip.label`, con los nombres de las hojas; y `Nnode`, el número
+   de nodos internos. 
+
+```{r}
+str(mt_nj)
+```
+
+3. `plot()`; al detectar que el objeto es `phylo`, R no utiliza  a `plot.phylo()`, cuya
+   ayuda (`?plot.phylo`) describe una larga lista de opciones: distintos
+   estilos de árbol (`type = "phylogram"`, `"cladogram"`, `"fan"`, `"unrooted"`,
+   `"radial"`), control sobre el tamaño y color de las etiquetas (`cex`,
+   `tip.color`), alineamiento de los nombres, grosor de las ramas, etc. Para
+   nuestros 42 taxones conviene un alto generoso para que las etiquetas no se
+   solapen:
+
+```{r, fig.height= 10}
+plot.phylo(mt_nj)
+```
+
+4. `add.scale.bar()` añade una barra horizontal con una longitud que
+   representa una cantidad determinada de sustituciones por sitio. 
+   `axisPhylo()` dibuja un eje horizontal debajo del árbol que indica la distancia (o el tiempo) desde
+   la raíz hacia cualquier punto. 
+
+:::
+
+# Enraizar
+El árbol `mt_nj` no está enraizado (puedes comprobarlo con `is.rooted())`. Tenemos un par de opciones para enraizarlo:
+
+## Escogiendo el nodo
+El árbol mt_nj no está enraizado (puedes comprobarlo con is.rooted()). Tenemos un par de opciones para enraizarlo. Una opción es root(), función en la que debemos especificar o bien el outgroup o bien el nodo interno en el que queremos situar la raíz. Para saber cómo identificar los nodos internos, puedes invocar nodelabels() después de haber usado plot(mt_nj). Por ejemplo, en mi caso, el nodo 75 parece ser el ancestro entre gorilas y chimpancés, y por tanto también es ancestro de los humanos. Por tanto:
+
+```{r}
+mt_nj_rooted <- root(mt_nj, node = 75)
+```
+
+## Con un outgroup
+La numeración de los nodos internos siempre sigue a la de las hojas (o puntas) del árbol. El orden es caprichoso y después de enraizar, lo que era el 75 en mt_nj ahora será el 43 en mt_nj_rooted, liandonos más. Para garantizar que el enraizado no depende de la numeración, lo más seguro es usar el nombre del outgroup:
+
+```{r}
+mt_nj_rooted <- root(mt_nj, outgroup = 'G.gorilla_D38114')
+```
+
+## En el punto medio
+Al representar el árbol enraizado a partir de root: `(plot(mt_nj_rooted))` verás que no todas las hojas del árbol están a la misma altura. El punto exacto en el que se sitúa la raíz en una rama es arbitrario y `root()` no se esfuerza mucho en intentar que el árbol parezca ultramétrico. La otra opción es la función midpoint(), que escoge la posición de la raíz para que el árbol esté más equilibrado:
+
+```{r, fig.height= 10}
+mt_nj_rooted_mid <- midpoint(mt_nj)
+plot(mt_nj_rooted_mid, align.tip.label = TRUE, main = 'NJ, enraizado en punto medio')
+nodelabels(frame = 'none')
+add.scale.bar()
+```
+
+## Con datación de hojas
+Pero el enraizado en punto medio asume que todas las hojas son contemporáneas, como suele suceder. El problema es que en nuestros datos tenemos secuencias contemporáneas y también arcaicas. En el apéndice encontrarás referencias sobre las edades estimadas de esas secuencias. Conociendo estas edades, podemos aplicar un método de enraizado llamado root-to-tip regression, mediante la función rtt() de ape.
+
+Lo primero es crear un vector de fechas (o edades) para todas las hojas del árbol. Podemos expressar las edades de las secuencias arcaicas como el número (negativo) de años que hace que dejaron de evolucionar. Para saber el orden en que debemos especificar las edades, podemos usar mt_nj$tip.label.
+
+```{r}
+fechas <- c(0, 0, 0, 0, 0, 0, 0, 0, 0,
+            -400000,
+            -39000, -50000, -110000, -110000,
+            -39820, -40096, -38515, -38310, -39000, -40000, -41210,
+            -42430, -42540, -43230, -43780, -44290, -44770, -49000,
+            -50000, -82752, -65000, -122287, -110450,
+            0, 0, 0, 0, 0, 0, 0, 0, 0)
+fechas <- setNames(fechas, mt_nj$tip.label)
+```
+
+A continuación se escoge la posición de la raíz que optimiza la regresión entre distancia de raíz a puntas y edades de las puntas (@Rambaut2016):
+
+```{r, fig.height=10}
+mt_nj_rtt <- rtt(mt_nj, tip.dates = fechas, objective = 'rms')
+plot(mt_nj_rtt)
+```
+
+:::{.callout-note icon=false}
+## Ejercicio 3
+1. ¿Se corresponden bien las distancias evolutivas estimadas con las dataciones?
+#Ayuda de gemini 
+Enfrentar las distancias acumuladas desde la raíz frente a las edades y ajustar una
+   regresión lineal. Si el reloj molecular se cumpliera de manera estricta, la
+   nube de puntos caería ordenadamente sobre la recta:
+   
+
+```{r}
+distancias_rtt <- node.depth.edgelength(mt_nj_rtt)[1:length(mt_nj_rtt$tip.label)]
+ajuste <- lm(distancias_rtt ~ fechas)
+summary(ajuste)
+plot(fechas, distancias_rtt,
+     xlab = "Edad de las secuencias (años)",
+     ylab = "Distancia genética desde la raíz",
+     main = "Regresión Root-to-Tip",
+     pch = 19, col = "royalblue")
+abline(ajuste, col = "red", lwd = 2)
+```
+# Interpretacion de gemini porque no lo entendia
+   El R² resultante no es alto: hay puntos claramente alejados de la línea de
+   ajuste. La razón conceptual es que el método root-to-tip da por hecho que
+   todas las hojas pertenecen a un mismo linaje evolutivo en el que la tasa
+   de sustitución es relativamente homogénea. En este árbol estamos mezclando
+   ramas tan distantes como gorilas, chimpancés, bonobos, *H. heidelbergensis*,
+   neandertales, denisovanos y humanos modernos, así que la premisa de "una
+   sola población en evolución continua" se rompe y la regresión global pierde
+   significado.
+   
+   
+   
+2. ¿Qué secuencias crees que se ajustan menos a su supuesta edad?
+
+Las muestras que peor encajan en la recta son los **primates no humanos
+   actuales** (gorila, chimpancés y bonobos). Su edad es 0 porque están vivos
+   hoy, pero la distancia que acumulan respecto a la raíz humana es muchisima
+   por haber estado divergiendo en paralelo a nuestra línea durante varios
+   millones de años. Por esto aparecen como puntos muy arriba del eje y pero en x=0
+   
+3. ¿Qué razones puede haber para que la edad de una secuencia no se corresponda con la cantidad de cambios que ha acumulado
+
+Según gemini:
+   - *Metodológicas*: la regresión root-to-tip presupone que las secuencias
+     comparten un solo origen reciente y una tasa de mutación constante. Si
+     se incluyen ramas que se separaron hace millones de años, la longitud
+     de rama refleja el tiempo transcurrido desde el último ancestro común,
+     no el tiempo desde el muestreo, y la recta deja de tener sentido
+     biológico.
+     
+   - *Biológicas*: incluso dentro de un mismo linaje, la tasa de sustitución
+     no tiene por qué ser uniforme. Puede variar entre linajes (heterogeneidad
+     de tasa), entre regiones del mtDNA por efecto de la selección purificadora
+     o positiva, y también puede verse alterada por episodios demográficos
+     —cuellos de botella, expansiones rápidas, introgresión entre poblaciones—
+     que distorsionan la relación lineal entre tiempo y cambio molecular.
+
+:::
+
+# Distancias
+Como hemos creado el objeto distancias antes, lo vamos a usar para conocer la cantidad estimada de cambios entre los cromosomas mitocondriales humanos y de neandertales, por ejemplo. El objeto de clase dist es incómodo, pero podemos obtener una simple matriz fácilmente:
+
+```{r}
+distMat <- as.matrix(distancias)
+```
+
+Aprovechando que los nombres de las secuencias tienen una estructura coherente, podemos usar `startsWith()` para seleccionar a los humanos modernos o a los neandertales, etc.:
+
+```{r}
+modernos     <- startsWith(colnames(distMat), 'H.s.modern')
+neandertales <- startsWith(colnames(distMat), 'H.s.neandertal')
+denisovanos  <- startsWith(colnames(distMat), 'H.s.denisova')
+chimpances   <- startsWith(colnames(distMat), 'P.troglodytes')
+bonobos      <- startsWith(colnames(distMat), 'P.paniscus')
+```
+
+La distancia estimada media entre humanos y neandertales se puede obtener como:
+
+```{r}
+mean(distMat[modernos, neandertales])
+```
+
+# Bibliografía

@@ -1,0 +1,280 @@
+---
+title: "Practica12"
+format: html
+engine: knitr
+---
+
+
+```{r}
+muestras <- read.table('~/Bioinformatica/data/Practica12/dme_elev_samples.tsv', header = TRUE)
+genex <- read.table('~/Bioinformatica/data/Practica12/salmon.merged.gene_counts.tsv',
+                    header = TRUE)
+```
+
+
+
+
+
+# Ejercicio 1 
+
+## 1.1 Añadir columna `pop_temp` con población y temperatura unidas por `_`
+
+```{r}
+muestras$pop_temp <- paste(muestras$population, muestras$temp, sep = "_")
+muestras
+```
+
+## 1.2 Número total de lecturas por muestra
+
+```{r}
+# Las columnas 3:14 son las 12 muestras; las dos primeras son gene_id y gene_name
+totales <- colSums(genex[, 3:14])
+totales
+summary(totales)
+```
+
+Las 12 genotecas tienen tamaños bastante iguales (del orden de varios millones de lecturas cada una).
+
+## 1.3 ¿Los recuentos tienen distribuciones parecidas entre muestras?
+
+```{r}
+# Boxplot de log2(counts + 1) para comparar distribuciones
+boxplot(log2(genex[, 3:14] + 1),
+        las = 2, col = "steelblue",
+        ylab = "log2(counts + 1)",
+        main = "Distribución de recuentos por muestra")
+```
+
+Las cajas son muy similares: la mediana, el rango  y los bigotes están a la misma altura en todas las muestras. Esto indica que la composición global de los recuentos es comparable entre genotecas.
+
+## 1.4 ¿Cuántos genes no se expresan en absoluto en ninguna muestra?
+
+```{r}
+no_expresados <- sum(rowSums(genex[, 3:14]) == 0)
+no_expresados
+cat("Porcentaje:", round(100 * no_expresados / nrow(genex), 1), "%\n")
+```
+No se expresan 4722 genes (19,5%).
+
+# Construcción del `DESeqDataSet`
+
+```{r}
+
+
+muestras <- read.table('~/Bioinformatica/data/Practica12/dme_elev_samples.tsv',
+                       header = TRUE)
+genex    <- read.table('~/Bioinformatica/data/Practica12/salmon.merged.gene_counts.tsv',
+                       header = TRUE)
+```
+
+## Preparación de los objetos para DESeq2
+
+```{r}
+# --- muestras ---
+row.names(muestras) <- muestras$sample
+muestras$sample <- NULL
+muestras$population <- factor(muestras$population, levels = c('maine', 'panama'))
+muestras$temp       <- factor(muestras$temp,       levels = c('low', 'high'))
+
+# --- genex (a matriz entera) ---
+row.names(genex) <- genex$gene_name
+genex$gene_name <- NULL
+genex$gene_id   <- NULL
+genex <- round(as.matrix(genex))
+
+# Comprobaciones
+class(genex)
+dim(genex)
+head(genex[, 1:3])
+```
+
+
+```{R}
+suppressPackageStartupMessages(library(DESeq2))
+
+dds1 <- DESeqDataSetFromMatrix(
+   countData = genex,
+   colData   = muestras,
+   design    = ~ population + temp
+)
+dds1
+
+
+```
+
+# Prefiltrado y análisis de expresión diferencial
+```{R}
+keep <- rowSums(counts(dds1)) > 0
+dds1 <- dds1[keep, ]
+```
+
+
+```{r}
+
+# Análisis
+dds1 <- DESeq(dds1)
+
+# Tabla de resultados 
+res <- results(dds1)
+res
+```
+
+# Ejercicio 3 — Contrastes y resumen
+
+## 3.1 Tabla de resultados para el contraste entre poblaciones
+
+Mirando `?results`, hay dos formas equivalentes. La más explícita:
+
+```{r}
+resPop <- results(dds1, contrast = c("population", "panama", "maine"))
+resPop
+```
+
+
+
+## 3.2 Resumen de cada contraste
+
+```{r}
+cat("=== Contraste temperatura (high vs low) ===\n")
+summary(res)
+
+cat("\n=== Contraste población (panama vs maine) ===\n")
+summary(resPop)
+```
+
+## 3.3 ¿Cuál es la tasa de falsos positivos (FDR)?
+
+Por defecto, `results()` aplica un umbral `alpha = 0.1`, es decir, **el FDR por defecto es del 10 %**. Si quisiéramos que fuese más estricto, podemos pedir `alpha = 0.05`:
+
+```{r}
+res05    <- results(dds1, alpha = 0.05)
+resPop05 <- results(dds1, contrast = c("population", "panama", "maine"),
+                    alpha = 0.05)
+summary(res05)
+summary(resPop05)
+```
+
+# Gráficas
+
+```{r}
+# MA-plot del contraste temperatura
+plotMA(res, main = "MA-plot: temp high vs low (sin shrink)")
+```
+
+## Shrinkage de los log fold changes
+
+```{r}
+resShrink <- lfcShrink(dds1, coef = 'temp_high_vs_low', type = 'normal')
+plotMA(resShrink, main = "MA-plot: temp high vs low (con shrink)")
+```
+
+Tras la contracción, los genes de baja expresión dejan de mostrar log fold changes inflados artificialmente y la nube de puntos se condensa hacia 0.
+
+# Ejercicio 4 — Volcano plot
+
+```{r}
+#No me estaba saliendo, le he pedido ayuda a gemini
+# Quitamos NAs y preparamos vectores
+
+if (!exists("res")) {
+    res <- results(dds1)}
+
+#En este paso ayuda de gemini:
+vol <- as.data.frame(res)
+vol <- vol[!is.na(vol$pvalue) & !is.na(vol$padj), ]
+
+#padj < 0.05  Y  |log2FC| > 1
+vol$signif <- vol$padj < 0.05 & abs(vol$log2FoldChange) > 1
+with(vol, plot(log2FoldChange, -log10(pvalue),
+               pch = 20, cex = 0.6,
+               col = ifelse(signif, "red", "grey60"),
+               xlab = "log2 Fold Change (high / low)",
+               ylab = "-log10(p-value)",
+               main = "Volcano plot — temperatura (high vs low)"))
+abline(v = c(-1, 1),       lty = 2, col = "blue")
+abline(h = -log10(0.05),   lty = 2, col = "blue")
+
+# Etiquetar los 10 genes más significativos
+top10 <- head(vol[order(vol$padj), ], 10)
+text(top10$log2FoldChange, -log10(top10$pvalue),
+     labels = rownames(top10), cex = 0.7, pos = 3)
+```
+
+Lo que muestra: cada punto es un gen, posicionado por su magnitud de cambio (eje X) y su significación estadística (eje Y). Los puntos en rojo son los genes diferencialmente expresados con `padj < 0.05` y `|log2FC| > 1`. Cuanto más alejado de (0,0), más interesante supongo.
+
+# Extracción de datos transformados y heatmap
+
+```{r}
+dds2 <- vst(dds1)
+NormCounts <- assay(dds2)
+
+res <- res[!is.na(res$pvalue), ]
+res <- res[order(res$log2FoldChange), ]
+
+heatmap(NormCounts[c(head(row.names(res), 100),
+                     tail(row.names(res), 100)), ],
+        Rowv = NA, Colv = NA)
+        #main = "Top 100 down + Top 100 up (sin clustering)")
+```
+
+# Ejercicio 5 — Explicación del bloque del heatmap
+
+El código hace cuatro cosas::
+
+1. **`res <- res[!is.na(res$pvalue), ]`** elimina de la tabla de resultados los genes para los que DESeq2 no pudo calcular un p-valor.
+2. **`res <- res[order(res$log2FoldChange), ]`** reordena la tabla de menor a mayor `log2FoldChange`. Tras esto, los **primeros** genes son los más reprimidos en `high` (los que más se sobreexpresan en `low`) y los **últimos** son los más inducidos en `high`.
+3. **`head(row.names(res), 100)` y `tail(row.names(res), 100)`** seleccionan los 100 genes en cada extremo, es decir, **los 200 genes con mayor cambio de expresión** entre los dos tratamientos de temperatura.
+4. **`heatmap(NormCounts[..., ], Rowv = NA, Colv = NA)`** dibuja un heatmap con esos 200 genes (filas) y las 12 muestras (columnas), usando los recuentos transformados con `vst()` para que sean comparables. Los `Rowv = NA` y `Colv = NA` **desactivan el clustering**, conservando el orden que ya impusimos (por log fold change en filas, y por la posición original en columnas). El patrón de expresión cambia  desde los genes "más down" hasta los "más up" entre los grupos de muestras.
+
+
+
+#  Ejercicio 6 (ayudado por gemini)
+# 6.1 ¿Se sobreexpresan más genes en temperatura baja que en alta?
+```{R}
+# Contraste high vs low, con FDR del 5 %
+res05    <- results(dds1, alpha = 0.05)
+res05_ok <- res05[!is.na(res05$padj), ]
+
+up_high <- sum(res05_ok$padj < 0.05 & res05_ok$log2FoldChange >  1)
+up_low  <- sum(res05_ok$padj < 0.05 & res05_ok$log2FoldChange < -1)
+
+cat("Sobreexpresados en HIGH (log2FC > +1):", up_high, "\n")
+cat("Sobreexpresados en LOW  (log2FC < -1):", up_low, "\n")
+
+if (up_low > up_high) {
+    cat("\n=> Se CONFIRMA la conclusión de limma: hay más genes inducidos en LOW.\n")
+} else {
+    cat("\n=> NO se confirma la conclusión de limma.\n")
+}
+```
+
+```{R}
+# 6.2 Comparación de los 10 genes top de limma
+
+genes_limma <- c("Cpr92F", "Vajk3", "lncRNA:CR46017",
+                 "CG7214", "CG3739", "Acp1")
+
+mi_tabla <- as.data.frame(res05)
+comp <- mi_tabla[rownames(mi_tabla) %in% genes_limma,
+                 c("log2FoldChange", "pvalue", "padj")]
+
+# Añadimos columnas con los valores de limma para comparar lado a lado
+limma_lfc <- c(Cpr92F = 2.47, Vajk3 = 1.68,
+               `lncRNA:CR46017` = -3.97, CG7214 = 2.20,
+               CG3739 = -2.87, Acp1 = 2.23)
+comp$limma_lfc <- limma_lfc[rownames(comp)]
+comp$signo_coincide <- sign(comp$log2FoldChange) == sign(comp$limma_lfc)
+comp$significativo  <- !is.na(comp$padj) & comp$padj < 0.05
+
+comp
+
+
+```
+
+Los 6 genes top de limma no coinciden en signo pero son altamente significativos en DESeq2. 
+
+
+
+
+
+

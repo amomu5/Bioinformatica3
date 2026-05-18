@@ -1,0 +1,86 @@
+---
+title: "2026-01.29 Practica 1"
+output: html_document
+---
+
+```{bash}
+# Sólo queremos ejecutar el código si los resultados no
+# están ya disponibles, es decir, si el archivo de salida no existe.
+if [ ! -e aln1.txt ]; then
+   # Sólo descargaremos las secuencias, si no están ya descargadas.
+   if [ ! -e HumanSMARCD2.fa ]; then
+      # Con la opción "-O" (letra mayúscula, no número cero) indicamos
+      # el nombre del archivo donde queremos guardar la secuencia.
+      wget -O HumanSMARCD2.fa https://www.ebi.ac.uk/ena/browser/api/fasta/AAI36323.1
+   fi
+   if [ ! -e HumanChr17.fa ]; then
+      wget -O HumanChr17.fa \
+         https://rest.ensembl.org/sequence/region/human/17:63832000..63843000:1?content-type=text/x-fasta
+   fi
+   # Utilizamos el carácter "\" para que Bash ignore el salto de línea
+   # y poder distribuir los argumentos y opciones en más de una línea.
+   needle 
+   -asequence HumanChr17.fa \
+    -bsequence HumanaSMARCD2.fa \
+    -gapopen 15.0 \
+    -gapextend 0.5 \
+    -auto \
+    -outfile aln1.txt
+fi
+```
+
+
+
+
+
+
+
+
+```{bash}
+if [ ! -e aln2.txt]; then
+
+   if [ ! -e HumanSMARCD2.fa ]; then 
+   wget -O HumanSMARCD2.fa \
+         https://www.ebi.ac.uk/ena/browser/api/fasta/AAI36323.1
+         
+   fi
+   if [ ! -e HumanChr17.fa ]; then
+   wget -O HumanChr17.fa \
+        https://rest.ensembl.org/sequence/region/human/17:63832000..63843000:1?content-type=text/x-fasta
+   fi
+   water -asequence HumanCrh17.fa \
+         -bsequence HumanSMARCD2.fa \
+         -gapopen 10 \
+         -gapextend 0.5 \
+         -outfile aln2.txt
+
+fi
+```
+
+
+```{bash}
+if [ ! -e aln2.afa]; then
+
+   if [ ! -e HumanSMARCD2.fa ]; then 
+   wget -O HumanSMARCD2.fa \
+         https://www.ebi.ac.uk/ena/browser/api/fasta/AAI36323.1
+         
+   fi
+   if [ ! -e HumanChr17.fa ]; then
+   wget -O HumanChr17.fa \
+        https://rest.ensembl.org/sequence/region/human/17:63832000..63843000:1?content-type=text/x-fasta
+   fi
+   water -asequence HumanCrh17.fa \
+         -bsequence HumanSMARCD2.fa \
+         -gapopen 10 \
+         -gapextend 0.5 \
+         -outfile aln2.afa \
+         -aformat3 fasta \
+
+fi
+```
+
+
+
+
+
